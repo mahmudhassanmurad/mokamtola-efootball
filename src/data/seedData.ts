@@ -533,5 +533,5 @@ export const INITIAL_SETTINGS: WebsiteSettings = {
   contactWhatsApp: '+1 (555) 234-5678',
   contactEmail: 'admin@pestournament.org',
   telegramGroup: 'https://t.me/pestournamenthub',
-  adminPin: 'Murad@123@2002',
+
 };
