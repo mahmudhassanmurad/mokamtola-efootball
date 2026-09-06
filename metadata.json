@@ -1,0 +1,6 @@
+{
+  "name": "PES Tournament Platform",
+  "description": "Public tournament information platform with live standings, fixtures, results, statistics, player records, announcements, and an admin control system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
