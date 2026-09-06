@@ -320,13 +320,13 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Admin Auth
   const adminLogin = (pin: string): boolean => {
-    if (pin === settings.adminPin || pin === 'admin123' || pin === 'admin') {
-      sessionStorage.setItem(AUTH_KEY, 'authenticated');
-      setIsAdminLoggedIn(true);
-      return true;
-    }
-    return false;
-  };
+  if (pin === settings.adminPin) {
+    sessionStorage.setItem(AUTH_KEY, 'authenticated');
+    setIsAdminLoggedIn(true);
+    return true;
+  }
+  return false;
+};
 
   const adminLogout = () => {
     sessionStorage.removeItem(AUTH_KEY);

@@ -29,7 +29,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
   };
 
   const handleQuickDemo = () => {
-    setPin('admin123');
+    setPin('Murad@123@2002');
     setError(null);
   };
 
@@ -106,7 +106,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
 
         {/* Test Credential Quick Tap */}
         <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-          <span>Demo PIN: <code className="text-orange-400 font-mono font-bold bg-slate-950 px-1.5 py-0.5 rounded">admin123</code></span>
+  
           <button
             onClick={handleQuickDemo}
             className="text-[11px] font-semibold text-orange-400 hover:text-orange-300 underline underline-offset-2"
