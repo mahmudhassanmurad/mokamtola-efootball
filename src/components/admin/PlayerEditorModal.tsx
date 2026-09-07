@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useTournament } from '../../context/TournamentContext';
 import { Player } from '../../types';
-import { X, Check, User, Image, Shield, AlertCircle } from 'lucide-react';
+import { X, Check, Image, UploadCloud } from 'lucide-react';
 
 interface PlayerEditorModalProps {
   isOpen: boolean;
@@ -42,30 +42,55 @@ export const PlayerEditorModal: React.FC<PlayerEditorModalProps> = ({ isOpen, on
 
   if (!isOpen) return null;
 
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Only image files are allowed.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setProfilePhoto(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // allow re-selecting same file later
+    e.target.value = '';
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) return;
+
+    const finalPhoto =
+      profilePhoto.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400';
 
     if (player) {
       updatePlayer(player.id, {
         fullName: fullName.trim() || displayName.trim(),
         displayName: displayName.trim(),
-        profilePhoto: profilePhoto.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+        profilePhoto: finalPhoto,
         teamName: teamName.trim() || 'Unassigned FC',
         teamLogo: teamLogo.trim() || '⚽',
         bio: bio.trim(),
-        status
+        status,
       });
     } else {
       addPlayer({
         fullName: fullName.trim() || displayName.trim(),
         displayName: displayName.trim(),
-        profilePhoto: profilePhoto.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+        profilePhoto: finalPhoto,
         teamName: teamName.trim() || 'Unassigned FC',
         teamLogo: teamLogo.trim() || '⚽',
         bio: bio.trim(),
         tournamentIds: [selectedTournamentId],
-        status
+        status,
       });
     }
 
@@ -93,6 +118,52 @@ export const PlayerEditorModal: React.FC<PlayerEditorModalProps> = ({ isOpen, on
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+          {/* Photo Upload + Preview */}
+          <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-3 items-start">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-24 h-24 rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden flex items-center justify-center">
+                {profilePhoto ? (
+                  <img
+                    src={profilePhoto}
+                    alt="Player preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Image className="w-8 h-8 text-slate-600" />
+                )}
+              </div>
+
+              <label className="w-full cursor-pointer inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold uppercase tracking-wider transition-colors border border-slate-700">
+                <UploadCloud className="w-4 h-4 text-orange-400" />
+                <span>Upload from PC</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                  Profile Photo URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://images.unsplash.com/..."
+                  value={profilePhoto}
+                  onChange={(e) => setProfilePhoto(e.target.value)}
+                  className="w-full py-1.5 px-2.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 font-mono"
+                />
+                <p className="mt-1 text-[10px] text-slate-500">
+                  PC upload হলে ছবিটা browser data-তে save হবে। Live production-এর জন্য পরে Supabase Storage better.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
@@ -148,19 +219,6 @@ export const PlayerEditorModal: React.FC<PlayerEditorModalProps> = ({ isOpen, on
                 className="w-full py-1.5 px-2.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 text-center"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
-              Profile Photo URL
-            </label>
-            <input
-              type="url"
-              placeholder="https://images.unsplash.com/..."
-              value={profilePhoto}
-              onChange={(e) => setProfilePhoto(e.target.value)}
-              className="w-full py-1.5 px-2.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 font-mono"
-            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
