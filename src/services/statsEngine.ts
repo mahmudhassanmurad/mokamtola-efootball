@@ -6,8 +6,7 @@ import { Match, Player, StandingRow, TopScorerRow, TopAssistRow, BestDefenceRow 
  */
 
 export function calculateStandings(matches: Match[], players: Player[], tournamentId?: string): StandingRow[] {
-  // Filter active tournament matches if tournamentId provided
-  const relevantMatches = tournamentId 
+  const relevantMatches = tournamentId
     ? matches.filter(m => m.tournamentId === tournamentId)
     : matches;
 
@@ -17,7 +16,6 @@ export function calculateStandings(matches: Match[], players: Player[], tourname
 
   const playerMap = new Map<string, Player>(players.map(p => [p.id, p]));
 
-  // Initialize stats bucket for all relevant players
   const statsMap = new Map<string, {
     played: number;
     won: number;
@@ -44,24 +42,43 @@ export function calculateStandings(matches: Match[], players: Player[], tourname
     });
   });
 
-  // Sort matches by scheduled date / round so form matches are chronological
   const completedMatches = relevantMatches
     .filter(m => m.status === 'completed' && m.homeScore !== null && m.awayScore !== null)
-    .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime() || a.round - b.round);
+    .sort(
+      (a, b) =>
+        new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime() ||
+        a.round - b.round
+    );
 
   completedMatches.forEach(match => {
     const homeScore = match.homeScore!;
     const awayScore = match.awayScore!;
 
-    // Ensure player entries exist
     if (!statsMap.has(match.homePlayerId) && playerMap.has(match.homePlayerId)) {
       statsMap.set(match.homePlayerId, {
-        played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, pts: 0, cleanSheets: 0, formMatches: []
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        gf: 0,
+        ga: 0,
+        pts: 0,
+        cleanSheets: 0,
+        formMatches: [],
       });
     }
+
     if (!statsMap.has(match.awayPlayerId) && playerMap.has(match.awayPlayerId)) {
       statsMap.set(match.awayPlayerId, {
-        played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, pts: 0, cleanSheets: 0, formMatches: []
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        gf: 0,
+        ga: 0,
+        pts: 0,
+        cleanSheets: 0,
+        formMatches: [],
       });
     }
 
@@ -137,7 +154,6 @@ export function calculateStandings(matches: Match[], players: Player[], tourname
     });
   });
 
-  // Sort by Points (desc), Goal Difference (desc), Goals For (desc), Won (desc), Name (asc)
   rows.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
@@ -146,7 +162,6 @@ export function calculateStandings(matches: Match[], players: Player[], tourname
     return a.player.displayName.localeCompare(b.player.displayName);
   });
 
-  // Assign ranks
   rows.forEach((row, index) => {
     row.rank = index + 1;
   });
@@ -155,7 +170,7 @@ export function calculateStandings(matches: Match[], players: Player[], tourname
 }
 
 export function calculateTopScorers(matches: Match[], players: Player[], tournamentId?: string): TopScorerRow[] {
-  const relevantMatches = tournamentId 
+  const relevantMatches = tournamentId
     ? matches.filter(m => m.tournamentId === tournamentId)
     : matches;
 
@@ -171,11 +186,9 @@ export function calculateTopScorers(matches: Match[], players: Player[], tournam
   const completedMatches = relevantMatches.filter(m => m.status === 'completed');
 
   completedMatches.forEach(match => {
-    // Increment appearances
     appearancesMap.set(match.homePlayerId, (appearancesMap.get(match.homePlayerId) || 0) + 1);
     appearancesMap.set(match.awayPlayerId, (appearancesMap.get(match.awayPlayerId) || 0) + 1);
 
-    // If events exist, count goal events
     if (match.events && match.events.length > 0) {
       match.events.forEach(event => {
         if (event.type === 'goal' && !event.isOwnGoal) {
@@ -186,7 +199,6 @@ export function calculateTopScorers(matches: Match[], players: Player[], tournam
         }
       });
     } else {
-      // Fallback if match result entered without individual goal events
       if (match.homeScore && match.homeScore > 0) {
         const cur = scorerMap.get(match.homePlayerId) || { goals: 0, penalties: 0 };
         cur.goals += match.homeScore;
@@ -205,6 +217,7 @@ export function calculateTopScorers(matches: Match[], players: Player[], tournam
   scorerMap.forEach((data, playerId) => {
     const player = playerMap.get(playerId);
     if (!player) return;
+
     const matchesPlayed = appearancesMap.get(playerId) || 0;
     if (data.goals > 0 || matchesPlayed > 0) {
       const gpm = matchesPlayed > 0 ? parseFloat((data.goals / matchesPlayed).toFixed(2)) : 0;
@@ -233,7 +246,7 @@ export function calculateTopScorers(matches: Match[], players: Player[], tournam
 }
 
 export function calculateTopAssists(matches: Match[], players: Player[], tournamentId?: string): TopAssistRow[] {
-  const relevantMatches = tournamentId 
+  const relevantMatches = tournamentId
     ? matches.filter(m => m.tournamentId === tournamentId)
     : matches;
 
@@ -268,6 +281,7 @@ export function calculateTopAssists(matches: Match[], players: Player[], tournam
   assistMap.forEach((assists, playerId) => {
     const player = playerMap.get(playerId);
     if (!player) return;
+
     const matchesPlayed = appearancesMap.get(playerId) || 0;
     if (assists > 0) {
       list.push({
@@ -308,7 +322,6 @@ export function calculateBestDefence(matches: Match[], players: Player[], tourna
       };
     });
 
-  // Best defence: lowest goals conceded per match, highest clean sheets
   list.sort((a, b) => {
     if (a.goalsConcededPerMatch !== b.goalsConcededPerMatch) {
       return a.goalsConcededPerMatch - b.goalsConcededPerMatch;
@@ -331,10 +344,12 @@ export function calculatePlayerDetailedProfile(playerId: string, matches: Match[
   if (!player) return null;
 
   const playerMatches = matches
-    .filter(m => (m.homePlayerId === playerId || m.awayPlayerId === playerId))
+    .filter(m => m.homePlayerId === playerId || m.awayPlayerId === playerId)
     .sort((a, b) => new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime());
 
-  const completedMatches = playerMatches.filter(m => m.status === 'completed' && m.homeScore !== null && m.awayScore !== null);
+  const completedMatches = playerMatches.filter(
+    m => m.status === 'completed' && m.homeScore !== null && m.awayScore !== null
+  );
 
   let wins = 0;
   let draws = 0;
@@ -360,7 +375,6 @@ export function calculatePlayerDetailedProfile(playerId: string, matches: Match[
     else if (myScore === oppScore) draws += 1;
     else losses += 1;
 
-    // Collect event details
     if (match.events) {
       match.events.forEach(e => {
         if (e.type === 'goal' && e.playerId === playerId && !e.isOwnGoal) {
@@ -410,21 +424,39 @@ export function calculatePlayerDetailedProfile(playerId: string, matches: Match[
 
 export function calculateTournamentStats(matches: Match[], players: Player[], tournamentId?: string) {
   const standings = calculateStandings(matches, players, tournamentId);
-  const relevantMatches = tournamentId ? matches.filter(m => m.tournamentId === tournamentId) : matches;
-  const completed = relevantMatches.filter(m => m.status === 'completed' && m.homeScore !== null && m.awayScore !== null);
+  const relevantMatches = tournamentId
+    ? matches.filter(m => m.tournamentId === tournamentId)
+    : matches;
+
+  const completed = relevantMatches.filter(
+    m => m.status === 'completed' && m.homeScore !== null && m.awayScore !== null
+  );
 
   const totalMatches = relevantMatches.length;
   const totalCompleted = completed.length;
-  const totalGoals = completed.reduce((sum, m) => sum + (m.homeScore || 0) + (m.awayScore || 0), 0);
-  const avgGoalsPerMatch = totalCompleted > 0 ? parseFloat((totalGoals / totalCompleted).toFixed(2)) : 0;
+
+  const totalGoals = completed.reduce(
+    (sum, m) => sum + (m.homeScore || 0) + (m.awayScore || 0),
+    0
+  );
+
+  const avgGoalsPerMatch =
+    totalCompleted > 0 ? parseFloat((totalGoals / totalCompleted).toFixed(2)) : 0;
 
   let highestScoringMatch: { match: Match; totalGoals: number } | null = null;
-  completed.forEach(m => {
+  completed.forEach((m) => {
     const goals = (m.homeScore || 0) + (m.awayScore || 0);
     if (!highestScoringMatch || goals > highestScoringMatch.totalGoals) {
       highestScoringMatch = { match: m, totalGoals: goals };
     }
   });
+
+  // IMPORTANT:
+  // No completed match means no leader/champion yet.
+  const leader =
+    totalCompleted > 0
+      ? standings.find((row) => row.played > 0) || null
+      : null;
 
   return {
     totalPlayers: standings.length,
@@ -434,6 +466,6 @@ export function calculateTournamentStats(matches: Match[], players: Player[], to
     totalGoals,
     avgGoalsPerMatch,
     highestScoringMatch,
-    leader: standings[0] || null,
+    leader,
   };
 }

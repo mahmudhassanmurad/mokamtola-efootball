@@ -1,27 +1,30 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTournament } from '../context/TournamentContext';
 import { PublicPage } from '../types';
-import { 
-  Trophy, 
-  Menu, 
-  X, 
-  Lock, 
-  ShieldCheck, 
-  ChevronDown, 
-  Share2
+import {
+  Trophy,
+  Menu,
+  X,
+  Lock,
+  Share2,
+  ChevronDown,
 } from 'lucide-react';
 
 export const Header: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick }) => {
-  const { 
-    activePublicPage, 
-    navigateTo, 
-    isAdminLoggedIn, 
-    settings, 
+  const {
+    activePublicPage,
+    navigateTo,
+    isAdminLoggedIn,
+    settings,
     selectedTournament,
-    openShareModal
+    openShareModal,
   } = useTournament();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [activePublicPage]);
 
   const navLinks: { id: PublicPage; label: string }[] = [
     { id: 'home', label: 'Home' },
@@ -50,42 +53,48 @@ export const Header: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick })
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-900/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-slate-950/85 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => handleNav('home')}
-              className="flex items-center gap-2.5 text-left group focus:outline-none"
-            >
-              <div className="h-8 w-8 rounded-lg bg-orange-600 flex items-center justify-center font-black text-white italic text-sm shadow-md shadow-orange-950/40 group-hover:scale-105 transition-transform">
-                P
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base sm:text-lg font-bold tracking-tight text-white uppercase font-['Chakra_Petch',sans-serif] block leading-none">
-                  PES <span className="text-orange-500 font-medium">Tournament</span>
+        <div className="h-16 flex items-center justify-between gap-3">
+          {/* Brand */}
+          <button
+            onClick={() => handleNav('home')}
+            className="flex items-center gap-3 group min-w-0 text-left"
+          >
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 flex items-center justify-center shadow-lg shadow-orange-950/30 group-hover:scale-105 transition-transform">
+              <Trophy className="w-5 h-5 text-slate-950" />
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-sm sm:text-base font-black tracking-[0.14em] text-white uppercase font-['Chakra_Petch',sans-serif] leading-none">
+                  PES <span className="text-orange-400">Tournament</span>
+                </h1>
+
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/10 border border-orange-500/20 text-[9px] font-black uppercase text-orange-400 tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                  {selectedTournament?.season || 'S1'}
-                </span>
               </div>
-            </button>
-          </div>
+
+              <p className="hidden sm:block text-[11px] text-slate-400 mt-1 truncate max-w-[240px]">
+                {selectedTournament?.name || 'Official public tournament portal'}
+              </p>
+            </div>
+          </button>
 
           {/* Desktop Navigation */}
-          <nav className="hidden xl:flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <nav className="hidden xl:flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[56vw] px-1 py-1 rounded-2xl border border-white/5 bg-white/3">
             {navLinks.map((link) => {
               const isActive = activePublicPage === link.id;
               return (
                 <button
                   key={link.id}
                   onClick={() => handleNav(link.id)}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors ${
+                  className={`shrink-0 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all ${
                     isActive
-                      ? 'text-white border-b-2 border-orange-500 bg-orange-500/10 font-bold'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-orange-500 text-slate-950 shadow-md shadow-orange-950/20'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   {link.label}
@@ -95,37 +104,38 @@ export const Header: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick })
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-3">
-            {/* Admin Login / Control Room */}
-            <button
-              onClick={onAdminClick}
-              className={`text-[10px] uppercase tracking-widest font-bold transition-colors flex items-center gap-1.5 ${
-                isAdminLoggedIn
-                  ? 'text-orange-400 bg-orange-500/10 px-2.5 py-1 rounded border border-orange-500/30'
-                  : 'text-slate-500 hover:text-orange-400'
-              }`}
-              title={isAdminLoggedIn ? 'Open Admin Panel' : 'Tournament Administrator Login'}
-            >
-              <Lock className="w-3 h-3 text-slate-500" />
-              <span>{isAdminLoggedIn ? 'Admin Active' : 'Admin Access'}</span>
-            </button>
-
-            <div className="h-4 w-[1px] bg-slate-800 hidden sm:block"></div>
-
-            {/* Quick Share button (high density round button) */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={handleQuickShare}
-              title="Share Tournament"
-              className="h-8 w-8 rounded-full border border-slate-700 bg-slate-800 flex items-center justify-center cursor-pointer hover:bg-slate-700 hover:border-slate-600 text-slate-400 hover:text-orange-400 transition-colors"
+              className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/8 bg-white/3 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+              title="Share tournament"
             >
-              <Share2 className="h-3.5 w-3.5" />
+              <Share2 className="w-4 h-4 text-orange-400" />
+              <span className="text-[11px] font-semibold">Share</span>
             </button>
 
-            {/* Mobile Hamburger Toggle */}
+            <button
+              onClick={onAdminClick}
+              className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all ${
+                isAdminLoggedIn
+                  ? 'bg-orange-500/10 text-orange-300 border border-orange-500/20'
+                  : 'border border-white/8 bg-white/3 text-slate-300 hover:text-white hover:bg-white/5'
+              }`}
+              title={isAdminLoggedIn ? 'Open admin panel' : 'Admin login'}
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">
+                {isAdminLoggedIn ? 'Admin Panel' : 'Admin Login'}
+              </span>
+              <span className="sm:hidden">
+                {isAdminLoggedIn ? 'Admin' : 'Login'}
+              </span>
+            </button>
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none"
-              aria-label="Toggle Menu"
+              className="xl:hidden inline-flex items-center justify-center h-10 w-10 rounded-xl border border-white/8 bg-white/3 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -133,50 +143,60 @@ export const Header: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick })
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="xl:hidden border-t border-slate-800 bg-slate-900/98 px-4 pt-3 pb-5 space-y-1 shadow-2xl animate-in slide-in-from-top-2">
-          <div className="grid grid-cols-2 gap-1.5 mb-3">
-            {navLinks.map((link) => {
-              const isActive = activePublicPage === link.id;
-              return (
-                <button
-                  key={link.id}
-                  onClick={() => handleNav(link.id)}
-                  className={`text-left px-3 py-2 text-xs font-semibold rounded uppercase tracking-wider transition-colors ${
-                    isActive
-                      ? 'text-orange-400 bg-orange-500/10 border-l-2 border-orange-500 font-bold'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
-                  }`}
-                >
-                  {link.label}
-                </button>
-              );
-            })}
-          </div>
+        <div className="xl:hidden border-t border-white/5 bg-slate-950/98 backdrop-blur-xl">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+            <div className="grid grid-cols-2 gap-2">
+              {navLinks.map((link) => {
+                const isActive = activePublicPage === link.id;
+                return (
+                  <button
+                    key={link.id}
+                    onClick={() => handleNav(link.id)}
+                    className={`text-left px-4 py-3 rounded-2xl border transition-all ${
+                      isActive
+                        ? 'bg-orange-500 text-slate-950 border-orange-400 shadow-md shadow-orange-950/20'
+                        : 'bg-white/3 border-white/5 text-slate-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-[11px] font-black uppercase tracking-wider">
+                      {link.label}
+                    </div>
+                    <div className="flex items-center gap-1 mt-1 text-[10px] opacity-80">
+                      <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
+                      Open
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
-          <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-            <button
-              onClick={() => {
-                handleQuickShare();
-                setMobileMenuOpen(false);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-orange-400"
-            >
-              <Share2 className="w-3.5 h-3.5 text-orange-400" />
-              <span>Share</span>
-            </button>
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                onClick={() => {
+                  handleQuickShare();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-white/8 bg-white/3 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                <Share2 className="w-4 h-4 text-orange-400" />
+                <span className="text-[11px] font-bold uppercase tracking-wider">Share</span>
+              </button>
 
-            <button
-              onClick={() => {
-                onAdminClick();
-                setMobileMenuOpen(false);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-slate-400 hover:text-orange-400 text-[10px] uppercase font-bold tracking-wider"
-            >
-              <Lock className="w-3 h-3" />
-              {isAdminLoggedIn ? 'Admin Panel' : 'Admin Login'}
-            </button>
+              <button
+                onClick={() => {
+                  onAdminClick();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-white/8 bg-white/3 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                <Lock className="w-4 h-4" />
+                <span className="text-[11px] font-bold uppercase tracking-wider">
+                  {isAdminLoggedIn ? 'Admin Panel' : 'Admin Login'}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       )}

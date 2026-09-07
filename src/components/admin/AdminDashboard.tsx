@@ -110,6 +110,19 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const playerMap = new Map<string, Player>(players.map(p => [p.id, p]));
+    const tournamentMatches = matches.filter(
+    (m) => m.tournamentId === selectedTournamentId
+  );
+
+  const completedMatches = tournamentMatches.filter(
+    (m) => m.status === 'completed' && m.homeScore !== null && m.awayScore !== null
+  );
+
+  const allMatchesCompleted =
+    tournamentMatches.length > 0 &&
+    completedMatches.length === tournamentMatches.length;
+
+  const currentLeader = standings.find((row) => row.played > 0) || null;
 
   const handleOpenEditMatch = (m: Match) => {
     setEditingMatch(m);
@@ -1001,26 +1014,73 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Champion Declaration */}
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-              <div>
-                <h4 className="text-xs font-bold text-white uppercase">Champion Declaration</h4>
-                <p className="text-[11px] text-slate-400">Current table leader: <strong className="text-orange-400">{standings[0]?.player.displayName || 'TBD'}</strong> ({standings[0]?.points || 0} PTS)</p>
-              </div>
+<div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+  <div>
+    <h4 className="text-xs font-bold text-white uppercase">
+      Champion Declaration
+    </h4>
 
-              <button
-                onClick={() => {
-                  const leader = standings[0];
-                  if (leader && confirm(`Declare ${leader.player.displayName} as official Champion and conclude tournament?`)) {
-                    updateTournament(selectedTournamentId, { status: 'completed' });
-                    notify(`Declared ${leader.player.displayName} as Champion!`);
-                  }
-                }}
-                className="h-8 px-3.5 bg-orange-500 hover:bg-orange-400 text-slate-950 font-bold rounded-lg text-xs uppercase flex items-center gap-1.5 transition-colors"
-              >
-                <Trophy className="w-3.5 h-3.5" />
-                <span>Crown Champion & Finalize</span>
-              </button>
-            </div>
+    {selectedTournament?.status === 'completed' ? (
+      <p className="text-[11px] text-slate-400">
+        Tournament already finalized.
+      </p>
+    ) : !allMatchesCompleted ? (
+      <p className="text-[11px] text-slate-400">
+        Champion declare করা যাবে শুধু তখনই, যখন সব fixtures complete হবে.
+      </p>
+    ) : (
+      <p className="text-[11px] text-slate-400">
+        Current table leader:{' '}
+        <strong className="text-orange-400">
+          {currentLeader?.player.displayName || 'TBD'}
+        </strong>{' '}
+        ({currentLeader?.points || 0} PTS)
+      </p>
+    )}
+  </div>
+
+  <button
+    disabled={
+      selectedTournament?.status === 'completed' ||
+      !allMatchesCompleted ||
+      !currentLeader
+    }
+    onClick={() => {
+      if (selectedTournament?.status === 'completed') {
+        notify('Tournament already finalized.');
+        return;
+      }
+
+      if (!allMatchesCompleted || !currentLeader) {
+        notify('সব fixtures complete না হওয়া পর্যন্ত champion finalize করা যাবে না.');
+        return;
+      }
+
+      if (
+        confirm(
+          `Declare ${currentLeader.player.displayName} as official Champion and conclude tournament?`
+        )
+      ) {
+        updateTournament(selectedTournamentId, {
+          status: 'completed',
+          championPlayerId: currentLeader.playerId,
+        } as any);
+
+        notify(`Declared ${currentLeader.player.displayName} as Champion!`);
+      }
+    }}
+    className={`h-8 px-3.5 font-bold rounded-lg text-xs uppercase flex items-center gap-1.5 transition-colors ${
+      selectedTournament?.status === 'completed' ||
+      !allMatchesCompleted ||
+      !currentLeader
+        ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+        : 'bg-orange-500 hover:bg-orange-400 text-slate-950'
+    }`}
+  >
+    <Trophy className="w-3.5 h-3.5" />
+    <span>Crown Champion & Finalize</span>
+  </button>
+</div>
           </div>
         </div>
       )}

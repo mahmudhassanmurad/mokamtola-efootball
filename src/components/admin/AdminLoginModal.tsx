@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTournament } from '../../context/TournamentContext';
-import { Lock, ShieldAlert, KeyRound, Eye, EyeOff, X, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, ShieldAlert, KeyRound, Eye, EyeOff, X, ShieldCheck } from 'lucide-react';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
     const success = adminLogin(pin);
     if (success) {
       setPin('');
@@ -26,11 +27,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
     } else {
       setError('Invalid Admin Security Key. Please verify your credentials.');
     }
-  };
-
-  const handleQuickDemo = () => {
-    setPin('Murad@123@2002');
-    setError(null);
   };
 
   return (
@@ -44,7 +40,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
           <X className="w-4 h-4" />
         </button>
 
-        {/* Security Shield Icon */}
+        {/* Icon + Header */}
         <div className="flex flex-col items-center text-center">
           <div className="w-12 h-12 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-3 shadow-md">
             <Lock className="w-6 h-6" />
@@ -83,6 +79,11 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
                 onChange={(e) => setPin(e.target.value)}
                 placeholder="Enter admin passkey..."
                 autoFocus
+                autoComplete="new-password"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                name="admin-passkey"
                 className="w-full pl-9 pr-9 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 transition-colors font-mono"
               />
               <button
@@ -103,17 +104,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
             <span>Authenticate & Access Control Panel</span>
           </button>
         </form>
-
-        {/* Test Credential Quick Tap */}
-        <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-  
-          <button
-            onClick={handleQuickDemo}
-            className="text-[11px] font-semibold text-orange-400 hover:text-orange-300 underline underline-offset-2"
-          >
-            Auto-fill demo PIN
-          </button>
-        </div>
       </div>
     </div>
   );
