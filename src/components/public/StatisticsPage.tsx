@@ -1,472 +1,436 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTournament } from '../../context/TournamentContext';
-import { 
-  Trophy, 
-  Award, 
-  ShieldCheck, 
-  Flame, 
-  Target, 
+import {
+  Trophy,
+  Award,
+  ShieldCheck,
+  Flame,
+  Target,
   Sparkles,
-  Share2
+  Share2,
+  Users,
+  BarChart3,
+  ChevronRight,
+  Medal,
 } from 'lucide-react';
 
+type StatTab = 'scorers' | 'assists' | 'defence' | 'cleansheets' | 'overview';
+
 export const StatisticsPage: React.FC = () => {
-  const { 
-    topScorers, 
-    topAssists, 
-    bestDefence, 
-    standings, 
-    tournamentStats, 
-    selectedTournament, 
-    openShareModal, 
-    navigateTo 
+  const {
+    topScorers,
+    topAssists,
+    bestDefence,
+    standings,
+    tournamentStats,
+    selectedTournament,
+    openShareModal,
+    navigateTo,
   } = useTournament();
 
-  const [activeTab, setActiveTab] = useState<'scorers' | 'assists' | 'defence' | 'cleansheets' | 'overview'>('scorers');
+  const [activeTab, setActiveTab] = useState<StatTab>('scorers');
 
-  const cleanSheetsList = [...standings].sort((a, b) => {
-    if (b.cleanSheets !== a.cleanSheets) return b.cleanSheets - a.cleanSheets;
-    return a.goalsAgainst - b.goalsAgainst;
-  });
+  const cleanSheetsList = useMemo(() => {
+    return [...standings].sort((a, b) => {
+      if (b.cleanSheets !== a.cleanSheets) return b.cleanSheets - a.cleanSheets;
+      return a.goalsAgainst - b.goalsAgainst;
+    });
+  }, [standings]);
+
+  const tabs: { id: StatTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'scorers', label: 'Goal Scorers', icon: <Target className="w-4 h-4" /> },
+    { id: 'assists', label: 'Assists', icon: <Award className="w-4 h-4" /> },
+    { id: 'defence', label: 'Best Defence', icon: <ShieldCheck className="w-4 h-4" /> },
+    { id: 'cleansheets', label: 'Clean Sheets', icon: <Sparkles className="w-4 h-4" /> },
+    { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
+  ];
 
   return (
-    <div className="space-y-4 pb-12">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-        <div>
-          <span className="text-[10px] font-black text-orange-400 tracking-wider uppercase">
-            Tournament Analytics
-          </span>
-          <h1 className="text-xl sm:text-3xl font-black italic text-white uppercase font-['Chakra_Petch',sans-serif] tracking-tight mt-0.5">
-            Player & Team Statistics
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Official leaderboards for Golden Boot, Assists, Best Defence, and Clean Sheets
-          </p>
+    <div className="space-y-4 pb-16">
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 shadow-2xl">
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-red-500/10 blur-3xl" />
         </div>
 
-        <button
-          onClick={() => openShareModal({
-            title: `${selectedTournament?.name} - Statistics & Leaderboards`,
-            subtitle: 'Golden Boot race, top playmakers, and defensive clean sheet records',
-            type: 'standings'
-          })}
-          className="self-start sm:self-center flex items-center gap-1.5 h-8 px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 rounded-lg transition-colors"
-        >
-          <Share2 className="w-3.5 h-3.5 text-orange-400" />
-          <span>Share Stats</span>
-        </button>
-      </div>
+        <div className="relative p-5 sm:p-7 lg:p-8 text-white">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-orange-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                Tournament Analytics
+              </span>
+
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-200">
+                <Users className="h-3.5 w-3.5 text-orange-300" />
+                Public Leaderboards
+              </span>
+            </div>
+
+            <button
+              onClick={() =>
+                openShareModal({
+                  title: `${selectedTournament?.name || 'PES Tournament'} - Statistics`,
+                  subtitle: 'Golden Boot, assists, defence and clean sheet leaderboards',
+                  type: 'standings',
+                })
+              }
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+            >
+              <Share2 className="h-4 w-4 text-orange-300" />
+              Share Stats
+            </button>
+          </div>
+
+          <div className="mt-5 max-w-3xl">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight font-['Chakra_Petch',sans-serif] leading-[0.95]">
+              Player & Team Statistics
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm sm:text-base text-orange-100/90 leading-relaxed">
+              Official leaderboards calculated from match results and event data only.
+            </p>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <MiniStat label="Total Matches" value={tournamentStats.totalMatches} />
+            <MiniStat label="Completed" value={tournamentStats.totalCompleted} />
+            <MiniStat label="Total Goals" value={tournamentStats.totalGoals} />
+            <MiniStat label="Avg Goals / Match" value={tournamentStats.avgGoalsPerMatch} />
+          </div>
+        </div>
+      </section>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-800">
-        <button
-          onClick={() => setActiveTab('scorers')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all whitespace-nowrap ${
-            activeTab === 'scorers'
-              ? 'bg-orange-500 text-slate-950 shadow-sm'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
-          }`}
-        >
-          <Target className="w-3.5 h-3.5" />
-          <span>Goal Scorers</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('assists')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all whitespace-nowrap ${
-            activeTab === 'assists'
-              ? 'bg-orange-500 text-slate-950 shadow-sm'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
-          }`}
-        >
-          <Award className="w-3.5 h-3.5" />
-          <span>Assists</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('defence')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all whitespace-nowrap ${
-            activeTab === 'defence'
-              ? 'bg-orange-500 text-slate-950 shadow-sm'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
-          }`}
-        >
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Best Defence</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('cleansheets')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all whitespace-nowrap ${
-            activeTab === 'cleansheets'
-              ? 'bg-orange-500 text-slate-950 shadow-sm'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Clean Sheets</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all whitespace-nowrap ${
-            activeTab === 'overview'
-              ? 'bg-orange-500 text-slate-950 shadow-sm'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
-          }`}
-        >
-          <Flame className="w-3.5 h-3.5" />
-          <span>Tournament Overview</span>
-        </button>
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {tabs.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all ${
+                active
+                  ? 'bg-orange-500 text-slate-950 shadow-md shadow-orange-950/20'
+                  : 'border border-white/5 bg-slate-900 text-slate-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Tab Contents */}
-      {/* 1. Goal Scorers */}
+      {/* Scorers */}
       {activeTab === 'scorers' && (
-        <div className="rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg">
-          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-800/30">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg">
-                <Target className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-bold text-sm text-white font-['Chakra_Petch',sans-serif] uppercase tracking-wide">
-                  Golden Boot Leaderboard
-                </h2>
-                <p className="text-[11px] text-slate-400">Top individual scorers ranked by total tournament goals</p>
-              </div>
-            </div>
+        <LeaderboardPanel
+          title="Golden Boot Leaderboard"
+          subtitle="Top scorers ranked by tournament goals"
+          icon={<Target className="w-4 h-4 text-orange-400" />}
+          actionText="View Player Profiles"
+          onAction={() => navigateTo('players')}
+        >
+          <div className="space-y-2">
+            {topScorers.length === 0 ? (
+              <EmptyState text="No scoring data available yet." />
+            ) : (
+              topScorers.map((row) => (
+                <StatRowCard
+                  key={row.player.id}
+                  rank={row.rank}
+                  name={row.player.displayName}
+                  subtitle={row.player.teamName || 'Player'}
+                  image={row.player.profilePhoto}
+                  rightPrimary={String(row.goals)}
+                  rightSecondary={`${row.goalsPerMatch} / match`}
+                  onClick={() => navigateTo('player_profile', row.player.id)}
+                />
+              ))
+            )}
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  <th className="py-2.5 px-3 text-center w-10">#</th>
-                  <th className="py-2.5 px-3">PLAYER / CLUB</th>
-                  <th className="py-2.5 px-2.5 text-center">MATCHES</th>
-                  <th className="py-2.5 px-2.5 text-center">PENALTIES</th>
-                  <th className="py-2.5 px-2.5 text-center">GOALS / MATCH</th>
-                  <th className="py-2.5 px-4 text-right font-black text-orange-400">GOALS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
-                {topScorers.map((row) => (
-                  <tr
-                    key={row.player.id}
-                    onClick={() => navigateTo('player_profile', row.player.id)}
-                    className="hover:bg-slate-800/40 cursor-pointer transition-colors group"
-                  >
-                    <td className="py-2.5 px-3 text-center">
-                      <span className={`w-5 h-5 mx-auto rounded flex items-center justify-center font-bold text-xs ${
-                        row.rank === 1 ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {row.rank}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={row.player.profilePhoto}
-                          alt={row.player.displayName}
-                          className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
-                        />
-                        <div>
-                          <span className="font-bold text-white group-hover:text-orange-400 transition-colors block">
-                            {row.player.displayName}
-                          </span>
-                          <span className="text-[10px] text-slate-400 block">{row.player.teamName}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-300">{row.matchesPlayed}</td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-400">{row.penalties}</td>
-                    <td className="py-2.5 px-2.5 text-center font-mono text-orange-400">{row.goalsPerMatch}</td>
-                    <td className="py-2.5 px-4 text-right font-black text-base text-orange-400 font-['Chakra_Petch',sans-serif]">
-                      {row.goals}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        </LeaderboardPanel>
       )}
 
-      {/* 2. Playmakers / Assists */}
+      {/* Assists */}
       {activeTab === 'assists' && (
-        <div className="rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg">
-          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-800/30">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg">
-                <Award className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-bold text-sm text-white font-['Chakra_Petch',sans-serif] uppercase tracking-wide">
-                  Playmaker & Assists Leaderboard
-                </h2>
-                <p className="text-[11px] text-slate-400">Most goal assists created in tournament matches</p>
-              </div>
-            </div>
+        <LeaderboardPanel
+          title="Assist Leaders"
+          subtitle="Most goals created by playmakers"
+          icon={<Award className="w-4 h-4 text-orange-400" />}
+          actionText="View Player Profiles"
+          onAction={() => navigateTo('players')}
+        >
+          <div className="space-y-2">
+            {topAssists.length === 0 ? (
+              <EmptyState text="No assist data available yet." />
+            ) : (
+              topAssists.map((row) => (
+                <StatRowCard
+                  key={row.player.id}
+                  rank={row.rank}
+                  name={row.player.displayName}
+                  subtitle={row.player.teamName || 'Player'}
+                  image={row.player.profilePhoto}
+                  rightPrimary={String(row.assists)}
+                  rightSecondary={`${row.matchesPlayed} matches`}
+                  onClick={() => navigateTo('player_profile', row.player.id)}
+                />
+              ))
+            )}
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  <th className="py-2.5 px-3 text-center w-10">#</th>
-                  <th className="py-2.5 px-3">PLAYER / CLUB</th>
-                  <th className="py-2.5 px-2.5 text-center">MATCHES PLAYED</th>
-                  <th className="py-2.5 px-4 text-right font-black text-orange-400">ASSISTS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
-                {topAssists.map((row) => (
-                  <tr
-                    key={row.player.id}
-                    onClick={() => navigateTo('player_profile', row.player.id)}
-                    className="hover:bg-slate-800/40 cursor-pointer transition-colors group"
-                  >
-                    <td className="py-2.5 px-3 text-center">
-                      <span className={`w-5 h-5 mx-auto rounded flex items-center justify-center font-bold text-xs ${
-                        row.rank === 1 ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {row.rank}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={row.player.profilePhoto}
-                          alt={row.player.displayName}
-                          className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
-                        />
-                        <div>
-                          <span className="font-bold text-white group-hover:text-orange-400 transition-colors block">
-                            {row.player.displayName}
-                          </span>
-                          <span className="text-[10px] text-slate-400 block">{row.player.teamName}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-300">{row.matchesPlayed}</td>
-                    <td className="py-2.5 px-4 text-right font-black text-base text-orange-400 font-['Chakra_Petch',sans-serif]">
-                      {row.assists}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        </LeaderboardPanel>
       )}
 
-      {/* 3. Best Defence */}
+      {/* Defence */}
       {activeTab === 'defence' && (
-        <div className="rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg">
-          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-800/30">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-bold text-sm text-white font-['Chakra_Petch',sans-serif] uppercase tracking-wide">
-                  Best Defensive Record
-                </h2>
-                <p className="text-[11px] text-slate-400">Fewest goals conceded per match & clean sheets</p>
-              </div>
-            </div>
+        <LeaderboardPanel
+          title="Best Defence"
+          subtitle="Fewest goals conceded per match"
+          icon={<ShieldCheck className="w-4 h-4 text-orange-400" />}
+          actionText="View Standings"
+          onAction={() => navigateTo('standings')}
+        >
+          <div className="space-y-2">
+            {bestDefence.length === 0 ? (
+              <EmptyState text="No defensive data available yet." />
+            ) : (
+              bestDefence.map((row) => (
+                <StatRowCard
+                  key={row.player.id}
+                  rank={row.rank}
+                  name={row.player.displayName}
+                  subtitle={row.player.teamName || 'Player'}
+                  image={row.player.profilePhoto}
+                  rightPrimary={String(row.goalsConcededPerMatch)}
+                  rightSecondary={`${row.cleanSheets} clean sheets`}
+                  onClick={() => navigateTo('player_profile', row.player.id)}
+                />
+              ))
+            )}
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  <th className="py-2.5 px-3 text-center w-10">#</th>
-                  <th className="py-2.5 px-3">PLAYER / CLUB</th>
-                  <th className="py-2.5 px-2.5 text-center">MATCHES</th>
-                  <th className="py-2.5 px-2.5 text-center">TOTAL CONCEDED</th>
-                  <th className="py-2.5 px-2.5 text-center">CLEAN SHEETS</th>
-                  <th className="py-2.5 px-4 text-right font-black text-orange-400">CONCEDED / MATCH</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
-                {bestDefence.map((row) => (
-                  <tr
-                    key={row.player.id}
-                    onClick={() => navigateTo('player_profile', row.player.id)}
-                    className="hover:bg-slate-800/40 cursor-pointer transition-colors group"
-                  >
-                    <td className="py-2.5 px-3 text-center">
-                      <span className={`w-5 h-5 mx-auto rounded flex items-center justify-center font-bold text-xs ${
-                        row.rank === 1 ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {row.rank}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={row.player.profilePhoto}
-                          alt={row.player.displayName}
-                          className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
-                        />
-                        <div>
-                          <span className="font-bold text-white group-hover:text-orange-400 transition-colors block">
-                            {row.player.displayName}
-                          </span>
-                          <span className="text-[10px] text-slate-400 block">{row.player.teamName}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-300">{row.matchesPlayed}</td>
-                    <td className="py-2.5 px-2.5 text-center text-rose-400 font-semibold">{row.goalsConceded}</td>
-                    <td className="py-2.5 px-2.5 text-center text-green-400 font-semibold">{row.cleanSheets}</td>
-                    <td className="py-2.5 px-4 text-right font-black text-base text-orange-400 font-['Chakra_Petch',sans-serif]">
-                      {row.goalsConcededPerMatch}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        </LeaderboardPanel>
       )}
 
-      {/* 4. Clean Sheets */}
+      {/* Clean Sheets */}
       {activeTab === 'cleansheets' && (
-        <div className="rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg">
-          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-800/30">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-bold text-sm text-white font-['Chakra_Petch',sans-serif] uppercase tracking-wide">
-                  Clean Sheets Ranking
-                </h2>
-                <p className="text-[11px] text-slate-400">Total matches without conceding a single goal</p>
-              </div>
-            </div>
+        <LeaderboardPanel
+          title="Clean Sheets"
+          subtitle="Players with the most shutouts"
+          icon={<Sparkles className="w-4 h-4 text-orange-400" />}
+          actionText="View Standings"
+          onAction={() => navigateTo('standings')}
+        >
+          <div className="space-y-2">
+            {cleanSheetsList.length === 0 ? (
+              <EmptyState text="No clean-sheet data available yet." />
+            ) : (
+              cleanSheetsList.map((row, index) => (
+                <StatRowCard
+                  key={row.playerId}
+                  rank={index + 1}
+                  name={row.player.displayName}
+                  subtitle={row.player.teamName || 'Player'}
+                  image={row.player.profilePhoto}
+                  rightPrimary={String(row.cleanSheets)}
+                  rightSecondary={`${row.goalsAgainst} conceded`}
+                  onClick={() => navigateTo('player_profile', row.playerId)}
+                />
+              ))
+            )}
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  <th className="py-2.5 px-3 text-center w-10">#</th>
-                  <th className="py-2.5 px-3">PLAYER / CLUB</th>
-                  <th className="py-2.5 px-2.5 text-center">MATCHES PLAYED</th>
-                  <th className="py-2.5 px-2.5 text-center">GOALS CONCEDED</th>
-                  <th className="py-2.5 px-4 text-right font-black text-orange-400">CLEAN SHEETS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
-                {cleanSheetsList.map((row, idx) => (
-                  <tr
-                    key={row.playerId}
-                    onClick={() => navigateTo('player_profile', row.playerId)}
-                    className="hover:bg-slate-800/40 cursor-pointer transition-colors group"
-                  >
-                    <td className="py-2.5 px-3 text-center">
-                      <span className={`w-5 h-5 mx-auto rounded flex items-center justify-center font-bold text-xs ${
-                        idx === 0 ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {idx + 1}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={row.player.profilePhoto}
-                          alt={row.player.displayName}
-                          className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
-                        />
-                        <div>
-                          <span className="font-bold text-white group-hover:text-orange-400 transition-colors block">
-                            {row.player.displayName}
-                          </span>
-                          <span className="text-[10px] text-slate-400 block">{row.player.teamName}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-300">{row.played}</td>
-                    <td className="py-2.5 px-2.5 text-center text-slate-400">{row.goalsAgainst}</td>
-                    <td className="py-2.5 px-4 text-right font-black text-base text-orange-400 font-['Chakra_Petch',sans-serif]">
-                      {row.cleanSheets}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        </LeaderboardPanel>
       )}
 
-      {/* 5. Tournament Overview & Records */}
+      {/* Overview */}
       {activeTab === 'overview' && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Matches</span>
-              <span className="text-2xl font-black text-white font-['Chakra_Petch',sans-serif] mt-0.5 block">
-                {tournamentStats.totalMatches}
-              </span>
-              <span className="text-[10px] text-green-400">{tournamentStats.totalCompleted} played</span>
-            </div>
+        <div className="space-y-4">
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <OverviewCard label="Played" value={tournamentStats.totalCompleted} hint="Completed matches" />
+            <OverviewCard label="Pending" value={Math.max(tournamentStats.totalMatches - tournamentStats.totalCompleted, 0)} hint="Scheduled matches" />
+            <OverviewCard label="Goals" value={tournamentStats.totalGoals} hint="All tournament goals" />
+            <OverviewCard label="Top Leader" value={tournamentStats.leader?.player.displayName || 'TBD'} hint={`${tournamentStats.leader?.points || 0} points`} />
+          </section>
 
-            <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Goals</span>
-              <span className="text-2xl font-black text-orange-400 font-['Chakra_Petch',sans-serif] mt-0.5 block">
-                {tournamentStats.totalGoals}
-              </span>
-              <span className="text-[10px] text-slate-400">across all fixtures</span>
-            </div>
-
-            <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Avg Goals/Game</span>
-              <span className="text-2xl font-black text-orange-300 font-['Chakra_Petch',sans-serif] mt-0.5 block">
-                {tournamentStats.avgGoalsPerMatch}
-              </span>
-              <span className="text-[10px] text-slate-400">high-scoring action</span>
-            </div>
-
-            <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tournament Leader</span>
-              <span className="text-xl font-black text-orange-400 font-['Chakra_Petch',sans-serif] mt-0.5 block truncate">
-                {tournamentStats.leader?.player.displayName || 'TBD'}
-              </span>
-              <span className="text-[10px] text-slate-400">{tournamentStats.leader?.points || 0} points</span>
-            </div>
-          </div>
-
-          {/* Highest Scoring Match Spotlight */}
           {tournamentStats.highestScoringMatch && (
-            <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
-              <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider block">
-                ⭐ Highest Scoring Match of the Season
-              </span>
-              <div className="mt-2 flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    {tournamentStats.highestScoringMatch.match.roundName}: {tournamentStats.highestScoringMatch.totalGoals} Goals Thriller
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Score: {tournamentStats.highestScoringMatch.match.homeScore} - {tournamentStats.highestScoringMatch.match.awayScore}
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigateTo('results')}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold transition-colors"
-                >
-                  View Match Result & Events
-                </button>
+            <section className="rounded-3xl border border-white/5 bg-slate-900 shadow-lg overflow-hidden">
+              <div className="flex items-center gap-2 border-b border-white/5 bg-white/3 px-4 py-3">
+                <Medal className="h-4 w-4 text-orange-400" />
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-200">
+                  Highest Scoring Match
+                </h2>
               </div>
-            </div>
+
+              <div className="p-4 sm:p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white">
+                      {tournamentStats.highestScoringMatch.match.roundName}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Total Goals: {tournamentStats.highestScoringMatch.totalGoals}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Score: {tournamentStats.highestScoringMatch.match.homeScore} - {tournamentStats.highestScoringMatch.match.awayScore}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => navigateTo('results')}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/10"
+                  >
+                    View Results <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </section>
           )}
         </div>
       )}
     </div>
   );
 };
+
+function MiniStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur">
+      <div className="text-[10px] font-bold uppercase tracking-wider text-orange-200/90">
+        {label}
+      </div>
+      <div className="mt-1 text-lg sm:text-2xl font-black text-white font-['Chakra_Petch',sans-serif] truncate">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function LeaderboardPanel({
+  title,
+  subtitle,
+  icon,
+  actionText,
+  onAction,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  actionText: string;
+  onAction: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-white/5 bg-slate-900 shadow-lg overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-white/3 px-4 py-3">
+        <div>
+          <div className="flex items-center gap-2">
+            {icon}
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-200">
+              {title}
+            </h2>
+          </div>
+          <p className="mt-1 text-xs text-slate-400">{subtitle}</p>
+        </div>
+
+        <button
+          onClick={onAction}
+          className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-orange-300 hover:text-orange-200 whitespace-nowrap"
+        >
+          {actionText} <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="p-3">{children}</div>
+    </section>
+  );
+}
+
+function StatRowCard({
+  rank,
+  name,
+  subtitle,
+  image,
+  rightPrimary,
+  rightSecondary,
+  onClick,
+}: {
+  rank: number;
+  name: string;
+  subtitle: string;
+  image?: string;
+  rightPrimary: string;
+  rightSecondary: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full rounded-2xl border border-white/5 bg-slate-950 p-3 text-left transition-colors hover:border-white/10 hover:bg-white/3"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-black ${
+              rank === 1 ? 'bg-orange-500 text-slate-950' : 'bg-white/5 text-slate-200'
+            }`}
+          >
+            {rank}
+          </span>
+
+          <img
+            src={image || defaultAvatar(name)}
+            alt={name}
+            className="h-9 w-9 shrink-0 rounded-full object-cover border border-white/10"
+          />
+
+          <div className="min-w-0">
+            <div className="truncate font-semibold text-white">{name}</div>
+            <div className="truncate text-[11px] text-slate-400">{subtitle}</div>
+          </div>
+        </div>
+
+        <div className="text-right">
+          <div className="text-xl font-black text-orange-400 font-['Chakra_Petch',sans-serif] leading-none">
+            {rightPrimary}
+          </div>
+          <div className="mt-1 text-[10px] text-slate-400">{rightSecondary}</div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950 px-4 py-6 text-center text-xs text-slate-500">
+      {text}
+    </div>
+  );
+}
+
+function defaultAvatar(name?: string) {
+  const seed = encodeURIComponent(name || 'player');
+  return `https://api.dicebear.com/7.x/thumbs/svg?seed=${seed}`;
+}
+
+function OverviewCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: number | string;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+      <div className="text-[10px] font-bold uppercase tracking-wider text-orange-200/90">
+        {label}
+      </div>
+      <div className="mt-1 truncate text-xl sm:text-2xl font-black text-white font-['Chakra_Petch',sans-serif]">
+        {value}
+      </div>
+      <div className="mt-1 text-[10px] text-slate-400">{hint}</div>
+    </div>
+  );
+}

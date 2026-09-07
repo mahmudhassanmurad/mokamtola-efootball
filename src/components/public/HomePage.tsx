@@ -1,540 +1,465 @@
 import React from 'react';
 import { useTournament } from '../../context/TournamentContext';
 import { Player } from '../../types';
-import { 
-  Trophy, 
-  Calendar, 
-  ArrowRight, 
-  Share2, 
-  ShieldCheck, 
-  Flame, 
-  CheckCircle2, 
-  Clock, 
-  ChevronRight, 
-  Bell, 
+import {
+  Trophy,
+  Calendar,
+  ArrowRight,
+  Share2,
+  Flame,
+  CheckCircle2,
+  Clock,
+  ChevronRight,
+  Bell,
   Sparkles,
-  Award
+  Award,
+  Users,
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
-  const { 
-    selectedTournament, 
-    matches, 
-    players, 
-    standings, 
-    topScorers, 
-    announcements, 
-    roadmap, 
-    navigateTo, 
-    openShareModal 
+  const {
+    selectedTournament,
+    matches,
+    players,
+    standings,
+    topScorers,
+    announcements,
+    roadmap,
+    navigateTo,
+    openShareModal,
   } = useTournament();
 
-  const playerMap = new Map<string, Player>(players.map(p => [p.id, p]));
+  const playerMap = new Map<string, Player>(players.map((p) => [p.id, p]));
 
-  // Upcoming matches (next 3)
   const upcomingMatches = matches
-    .filter(m => m.status === 'scheduled')
-    .sort((a, b) => new Date(`${a.scheduledDate}T${a.scheduledTime || '00:00'}`).getTime() - new Date(`${b.scheduledDate}T${b.scheduledTime || '00:00'}`).getTime())
+    .filter((m) => m.status === 'scheduled')
+    .sort(
+      (a, b) =>
+        new Date(`${a.scheduledDate}T${a.scheduledTime || '00:00'}`).getTime() -
+        new Date(`${b.scheduledDate}T${b.scheduledTime || '00:00'}`).getTime()
+    )
     .slice(0, 3);
 
-  // Latest completed results (last 3)
   const latestResults = matches
-    .filter(m => m.status === 'completed' && m.homeScore !== null && m.awayScore !== null)
-    .sort((a, b) => new Date(`${b.scheduledDate}T${b.scheduledTime || '00:00'}`).getTime() - new Date(`${a.scheduledDate}T${a.scheduledTime || '00:00'}`).getTime())
+    .filter((m) => m.status === 'completed' && m.homeScore !== null && m.awayScore !== null)
+    .sort(
+      (a, b) =>
+        new Date(`${b.scheduledDate}T${b.scheduledTime || '00:00'}`).getTime() -
+        new Date(`${a.scheduledDate}T${a.scheduledTime || '00:00'}`).getTime()
+    )
     .slice(0, 3);
 
-  // Pinned or latest announcements (first 2)
-  const pinnedAnnouncements = announcements
-    .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+  const pinnedAnnouncements = [...announcements]
+    .sort((a, b) => Number(b.isPinned) - Number(a.isPinned))
     .slice(0, 2);
 
-  // Top 4 teams in standings
   const topFourStandings = standings.slice(0, 4);
-
-  // Top 3 Goal Scorers
   const topThreeScorers = topScorers.slice(0, 3);
 
-  const currentStage = roadmap.find(r => r.status === 'current') || roadmap[0];
+  const currentStage =
+    roadmap.find((r) => r.status === 'current') || roadmap[0] || null;
+
+  const completedMatches = matches.filter((m) => m.status === 'completed').length;
 
   return (
-    <div className="space-y-4 pb-12">
-      {/* Hero Tournament Banner (High Density Orange/Red Gradient with Geometric Accent Rings) */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-600 to-red-800 p-6 sm:p-8 text-white shadow-xl border border-orange-500/50">
-        {/* Geometric Accent Rings */}
-        <div className="absolute right-0 top-0 h-64 w-64 rounded-full border-[16px] border-white opacity-20 transform translate-x-1/4 -translate-y-1/4 pointer-events-none" />
-        <div className="absolute right-12 top-12 h-40 w-40 rounded-full border-[8px] border-white opacity-10 pointer-events-none" />
+    <div className="space-y-4 pb-16">
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 shadow-2xl">
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-red-500/10 blur-3xl" />
+        </div>
 
-        {/* Background Image subtle overlay */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-15 mix-blend-overlay pointer-events-none"
-          style={{ backgroundImage: `url(${selectedTournament?.bannerUrl || 'https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=1200&auto=format&fit=crop&q=80'})` }}
-        />
-        
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between min-h-[220px]">
+        <div className="relative p-5 sm:p-7 lg:p-8 text-white">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="bg-white/10 backdrop-blur px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-widest border border-white/20 italic">
-                {selectedTournament?.season || 'Season 1'}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-orange-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                Live Tournament Hub
               </span>
-              <span className="bg-slate-950/40 backdrop-blur px-2 py-0.5 rounded text-[9px] font-black uppercase text-green-400 tracking-wider flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                Status: Live Hub
-              </span>
-              <span className="hidden sm:inline-flex bg-slate-950/30 backdrop-blur px-2 py-0.5 rounded text-[9px] font-bold uppercase text-orange-200 tracking-wider">
-                {selectedTournament?.game || 'PES Championship'}
-              </span>
+
+              {currentStage && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-200">
+                  <Sparkles className="h-3.5 w-3.5 text-orange-300" />
+                  {currentStage.title}
+                </span>
+              )}
             </div>
 
             <button
-              onClick={() => openShareModal({
-                title: selectedTournament?.name || 'PES Tournament',
-                subtitle: `Season 1 Live Standings & Results • Prize: ${selectedTournament?.prizePool}`,
-                type: 'tournament'
-              })}
-              className="h-8 px-3 rounded-lg bg-slate-950/40 hover:bg-slate-950/60 border border-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors backdrop-blur"
+              onClick={() =>
+                openShareModal({
+                  title: selectedTournament?.name || 'PES TOURNAMENT',
+                  subtitle:
+                    selectedTournament?.description ||
+                    'Official public tournament information portal',
+                  type: 'tournament',
+                })
+              }
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
             >
-              <Share2 className="w-3.5 h-3.5 text-orange-300" />
-              <span>Share</span>
+              <Share2 className="h-4 w-4 text-orange-300" />
+              Share
             </button>
           </div>
 
-          <div className="my-4 max-w-3xl">
-            <h1 className="text-2xl sm:text-4xl font-black italic tracking-tighter uppercase font-['Chakra_Petch',sans-serif] leading-none drop-shadow-sm">
-              {selectedTournament?.name || 'PES Premier League'}
+          <div className="mt-5 max-w-3xl">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight font-['Chakra_Petch',sans-serif] leading-[0.95]">
+              {selectedTournament?.name || 'PES Tournament'}
             </h1>
-            <p className="mt-2 text-orange-100/90 text-xs sm:text-sm leading-relaxed line-clamp-2 max-w-2xl">
-              {selectedTournament?.description || 'The premier competitive PES tournament featuring top controller masters battling in full round-robin action for championship glory.'}
+            <p className="mt-3 max-w-2xl text-sm sm:text-base text-orange-100/90 leading-relaxed">
+              {selectedTournament?.description ||
+                'Public tournament portal for fixtures, results, standings, statistics, rules, announcements and player profiles.'}
             </p>
           </div>
 
-          {/* Quick Metrics & Meta in High-Density Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-4 border-t border-white/20">
-            <div className="bg-slate-950/40 backdrop-blur rounded-lg p-2.5 border border-white/10">
-              <span className="text-[9px] font-bold uppercase text-orange-200 tracking-wider block">Format</span>
-              <span className="text-sm sm:text-base font-bold text-white capitalize">{selectedTournament?.format || 'Round Robin'}</span>
-            </div>
-            <div className="bg-slate-950/40 backdrop-blur rounded-lg p-2.5 border border-white/10">
-              <span className="text-[9px] font-bold uppercase text-orange-200 tracking-wider block">Prize Pool</span>
-              <span className="text-sm sm:text-base font-bold text-white">{selectedTournament?.prizePool || '$1,500 USD'}</span>
-            </div>
-            <div className="bg-slate-950/40 backdrop-blur rounded-lg p-2.5 border border-white/10">
-              <span className="text-[9px] font-bold uppercase text-orange-200 tracking-wider block">Stage</span>
-              <span className="text-sm sm:text-base font-bold text-white truncate block">{currentStage?.title.split(':')[0] || 'League Phase'}</span>
-            </div>
-            <div className="bg-slate-950/40 backdrop-blur rounded-lg p-2.5 border border-white/10">
-              <span className="text-[9px] font-bold uppercase text-orange-200 tracking-wider block">Competitors</span>
-              <span className="text-sm sm:text-base font-bold text-white">{players.length} Active Players</span>
-            </div>
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <StatCard label="Players" value={players.length} />
+            <StatCard label="Matches" value={matches.length} />
+            <StatCard label="Completed" value={completedMatches} />
+            <StatCard label="Standings" value={standings.length} />
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            <ActionButton text="Fixtures" onClick={() => navigateTo('fixtures')} />
+            <ActionButton text="Results" onClick={() => navigateTo('results')} />
+            <ActionButton text="Standings" onClick={() => navigateTo('standings')} />
+            <ActionButton text="Players" onClick={() => navigateTo('players')} />
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Announcements Alert Bar (High Density Alert) */}
+      {/* Pinned announcements */}
       {pinnedAnnouncements.length > 0 && (
-        <div className="space-y-2">
+        <section className="space-y-2">
           {pinnedAnnouncements.map((ann) => (
-            <div 
+            <div
               key={ann.id}
-              className="flex items-start sm:items-center justify-between gap-3 p-3 bg-orange-500/10 border border-orange-500/30 rounded-xl text-slate-200"
+              className="flex items-start justify-between gap-3 rounded-2xl border border-orange-500/25 bg-orange-500/10 p-3 sm:p-4 text-slate-100"
             >
-              <div className="flex items-start sm:items-center gap-2.5">
-                <div className="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg shrink-0 mt-0.5 sm:mt-0">
-                  <Bell className="w-3.5 h-3.5" />
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-xl bg-orange-500/15 p-2 text-orange-300">
+                  <Bell className="h-4 w-4" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-xs sm:text-sm text-white">{ann.title}</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 font-bold uppercase">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-bold text-white">{ann.title}</span>
+                    <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-300">
                       {ann.category}
                     </span>
                     <span className="text-[11px] text-slate-400">{ann.date}</span>
                   </div>
-                  <p className="text-xs text-slate-300 mt-0.5 line-clamp-1">{ann.content}</p>
+                  <p className="mt-1 line-clamp-2 text-xs sm:text-sm text-slate-300">
+                    {ann.content}
+                  </p>
                 </div>
               </div>
 
               <button
                 onClick={() => navigateTo('announcements')}
-                className="shrink-0 text-xs font-semibold text-orange-400 hover:text-orange-300 flex items-center gap-1 hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-orange-300 hover:text-orange-200"
               >
-                <span>Read</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                Read <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}
-        </div>
+        </section>
       )}
 
-      {/* Grid: Upcoming Matches & Latest Results */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Upcoming Fixtures */}
-        <div className="rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between bg-slate-800/50 px-4 py-2 border-b border-slate-800 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-3.5 h-3.5 text-orange-400" />
-                <span className="text-slate-200 font-bold">Upcoming Fixtures</span>
-              </div>
-              <button
-                onClick={() => navigateTo('fixtures')}
-                className="text-[10px] font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 flex items-center gap-1 group"
-              >
-                <span>All Fixtures</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
+      {/* Upcoming + Latest Results */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Panel
+          title="Upcoming Fixtures"
+          icon={<Calendar className="h-4 w-4 text-orange-400" />}
+          actionLabel="All Fixtures"
+          onAction={() => navigateTo('fixtures')}
+        >
+          <div className="space-y-2">
+            {upcomingMatches.length === 0 ? (
+              <EmptyState text="No upcoming fixtures scheduled right now." />
+            ) : (
+              upcomingMatches.map((match) => {
+                const homePlayer = playerMap.get(match.homePlayerId);
+                const awayPlayer = playerMap.get(match.awayPlayerId);
 
-            <div className="p-3 space-y-2">
-              {upcomingMatches.length === 0 ? (
-                <p className="text-xs text-slate-500 py-6 text-center">No upcoming fixtures scheduled right now.</p>
-              ) : (
-                upcomingMatches.map((match) => {
-                  const homePlayer = playerMap.get(match.homePlayerId);
-                  const awayPlayer = playerMap.get(match.awayPlayerId);
+                return (
+                  <div
+                    key={match.id}
+                    className="rounded-2xl border border-white/5 bg-slate-950 p-3 transition-colors hover:border-white/10"
+                  >
+                    <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <span className="text-orange-300">{match.roundName}</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5" />
+                        {match.scheduledDate} • {match.scheduledTime}
+                      </span>
+                    </div>
 
-                  return (
-                    <div 
-                      key={match.id}
-                      className="p-2.5 sm:p-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors"
-                    >
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1.5">
-                        <span className="font-bold text-orange-400 uppercase tracking-wider">{match.roundName}</span>
-                        <span className="flex items-center gap-1 text-slate-400">
-                          <Clock className="w-3 h-3" />
-                          {match.scheduledDate} • {match.scheduledTime}
+                    <div className="grid grid-cols-11 items-center gap-2">
+                      <PlayerMiniCard
+                        player={homePlayer}
+                        align="left"
+                        className="col-span-5"
+                      />
+
+                      <div className="col-span-1 text-center">
+                        <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-300">
+                          VS
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-11 items-center gap-2">
-                        {/* Home */}
-                        <div className="col-span-5 flex items-center gap-2 truncate">
-                          <img 
-                            src={homePlayer?.profilePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'} 
-                            alt={homePlayer?.displayName}
-                            className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
-                          />
-                          <div className="truncate">
-                            <span className="text-xs font-bold text-white block truncate">{homePlayer?.displayName || 'Player'}</span>
-                            <span className="text-[10px] text-slate-400 block truncate">{homePlayer?.teamName}</span>
-                          </div>
-                        </div>
-
-                        {/* VS badge */}
-                        <div className="col-span-1 text-center">
-                          <span className="text-[9px] font-black px-1.5 py-0.5 bg-slate-800 text-slate-400 rounded uppercase">
-                            VS
-                          </span>
-                        </div>
-
-                        {/* Away */}
-                        <div className="col-span-5 flex items-center justify-end gap-2 text-right truncate">
-                          <div className="truncate">
-                            <span className="text-xs font-bold text-white block truncate">{awayPlayer?.displayName || 'Player'}</span>
-                            <span className="text-[10px] text-slate-400 block truncate">{awayPlayer?.teamName}</span>
-                          </div>
-                          <img 
-                            src={awayPlayer?.profilePhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'} 
-                            alt={awayPlayer?.displayName}
-                            className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
-                          />
-                        </div>
-                      </div>
+                      <PlayerMiniCard
+                        player={awayPlayer}
+                        align="right"
+                        className="col-span-5"
+                      />
                     </div>
-                  );
-                })
-              )}
-            </div>
+                  </div>
+                );
+              })
+            )}
           </div>
-        </div>
+        </Panel>
 
-        {/* Latest Results */}
-        <div className="rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between bg-slate-800/50 px-4 py-2 border-b border-slate-800 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              <div className="flex items-center gap-2">
-                <Flame className="w-3.5 h-3.5 text-orange-500" />
-                <span className="text-slate-200 font-bold">Latest Results</span>
-              </div>
-              <button
-                onClick={() => navigateTo('results')}
-                className="text-[10px] font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 flex items-center gap-1 group"
-              >
-                <span>All Results</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
+        <Panel
+          title="Latest Results"
+          icon={<Flame className="h-4 w-4 text-orange-500" />}
+          actionLabel="All Results"
+          onAction={() => navigateTo('results')}
+        >
+          <div className="space-y-2">
+            {latestResults.length === 0 ? (
+              <EmptyState text="No completed matches yet." />
+            ) : (
+              latestResults.map((match) => {
+                const homePlayer = playerMap.get(match.homePlayerId);
+                const awayPlayer = playerMap.get(match.awayPlayerId);
 
-            <div className="p-3 space-y-2">
-              {latestResults.length === 0 ? (
-                <p className="text-xs text-slate-500 py-6 text-center">No completed matches yet.</p>
-              ) : (
-                latestResults.map((match) => {
-                  const homePlayer = playerMap.get(match.homePlayerId);
-                  const awayPlayer = playerMap.get(match.awayPlayerId);
-
-                  return (
-                    <div 
-                      key={match.id}
-                      className="p-2.5 sm:p-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors"
-                    >
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1.5">
-                        <span className="font-bold text-orange-400 uppercase tracking-wider">{match.roundName}</span>
-                        <div className="flex items-center gap-2">
-                          <span>{match.scheduledDate}</span>
-                          <button
-                            onClick={() => openShareModal({
-                              title: `${homePlayer?.displayName} ${match.homeScore} - ${match.awayScore} ${awayPlayer?.displayName}`,
-                              subtitle: `${match.roundName} • Official PES Tournament Result`,
-                              type: 'match',
-                              match,
-                              homePlayer,
-                              awayPlayer
-                            })}
-                            className="p-1 text-slate-400 hover:text-orange-400 hover:bg-slate-800 rounded transition-colors"
-                            title="Share this match result"
-                          >
-                            <Share2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-11 items-center gap-2">
-                        {/* Home */}
-                        <div className="col-span-4 flex items-center gap-2 truncate">
-                          <img 
-                            src={homePlayer?.profilePhoto} 
-                            alt={homePlayer?.displayName}
-                            className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
-                          />
-                          <span className="text-xs font-bold text-white truncate">{homePlayer?.displayName}</span>
-                        </div>
-
-                        {/* Score */}
-                        <div className="col-span-3 text-center">
-                          <span className="text-lg sm:text-xl font-black text-white px-2 py-0.5 bg-slate-900 border border-slate-800 rounded tracking-widest font-['Chakra_Petch',sans-serif]">
-                            {match.homeScore} : {match.awayScore}
-                          </span>
-                        </div>
-
-                        {/* Away */}
-                        <div className="col-span-4 flex items-center justify-end gap-2 truncate text-right">
-                          <span className="text-xs font-bold text-white truncate">{awayPlayer?.displayName}</span>
-                          <img 
-                            src={awayPlayer?.profilePhoto} 
-                            alt={awayPlayer?.displayName}
-                            className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
-                          />
-                        </div>
-                      </div>
+                return (
+                  <div
+                    key={match.id}
+                    className="rounded-2xl border border-white/5 bg-slate-950 p-3 transition-colors hover:border-white/10"
+                  >
+                    <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <span className="text-orange-300">{match.roundName}</span>
+                      <span>{match.scheduledDate}</span>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Standings & Top Scorers Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* League Table Snapshot (High Density Table) */}
-        <div className="lg:col-span-2 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg">
-          <div className="flex items-center justify-between bg-slate-800/50 px-4 py-2 border-b border-slate-800 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-3.5 h-3.5 text-orange-400" />
-              <span className="text-slate-200 font-bold">Current Standings (Top 4)</span>
-            </div>
-            <button
-              onClick={() => navigateTo('standings')}
-              className="text-[10px] font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 flex items-center gap-1 group"
-            >
-              <span>Full Table</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-            </button>
-          </div>
+                    <div className="grid grid-cols-11 items-center gap-2">
+                      <PlayerMiniCard
+                        player={homePlayer}
+                        align="left"
+                        className="col-span-4"
+                      />
 
+                      <div className="col-span-3 text-center">
+                        <span className="inline-flex min-w-[92px] items-center justify-center rounded-2xl border border-white/10 bg-slate-900 px-3 py-2 text-lg font-black tracking-widest text-white font-['Chakra_Petch',sans-serif]">
+                          {match.homeScore} : {match.awayScore}
+                        </span>
+                      </div>
+
+                      <PlayerMiniCard
+                        player={awayPlayer}
+                        align="right"
+                        className="col-span-4"
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </Panel>
+      </section>
+
+      {/* Standings + scorers */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Panel
+          title="Standings Top 4"
+          icon={<Trophy className="h-4 w-4 text-orange-400" />}
+          actionLabel="Full Table"
+          onAction={() => navigateTo('standings')}
+          className="lg:col-span-2"
+        >
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-slate-800 text-[9px] uppercase tracking-wider text-slate-500 font-bold bg-slate-900/60">
-                  <th className="py-2 px-3">#</th>
-                  <th className="py-2 px-3">Player</th>
+                <tr className="border-b border-white/5 text-[10px] uppercase tracking-wider text-slate-500">
+                  <th className="py-2 px-2">#</th>
+                  <th className="py-2 px-2">Player</th>
                   <th className="py-2 px-2 text-center">P</th>
                   <th className="py-2 px-2 text-center">W</th>
                   <th className="py-2 px-2 text-center">D</th>
                   <th className="py-2 px-2 text-center">L</th>
                   <th className="py-2 px-2 text-center">GD</th>
-                  <th className="py-2 px-3 text-right">PTS</th>
+                  <th className="py-2 px-2 text-right">PTS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
+              <tbody className="divide-y divide-white/5 text-sm">
                 {topFourStandings.map((row) => (
-                  <tr 
+                  <tr
                     key={row.playerId}
                     onClick={() => navigateTo('player_profile', row.playerId)}
-                    className={`hover:bg-slate-800/40 cursor-pointer transition-colors group ${
-                      row.rank === 1 ? 'bg-orange-500/5' : ''
-                    }`}
+                    className="cursor-pointer transition-colors hover:bg-white/3"
                   >
-                    <td className="py-2.5 px-3">
-                      <span className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[11px] ${
-                        row.rank === 1 ? 'bg-orange-600 text-white' : 
-                        row.rank <= 4 ? 'bg-slate-800 text-orange-400 border border-orange-500/30' : 
-                        'text-slate-400'
-                      }`}>
+                    <td className="py-3 px-2">
+                      <span
+                        className={`inline-flex h-6 w-6 items-center justify-center rounded-lg text-[11px] font-black ${
+                          row.rank === 1
+                            ? 'bg-orange-500 text-slate-950'
+                            : 'bg-white/5 text-orange-300'
+                        }`}
+                      >
                         {row.rank}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3">
+                    <td className="py-3 px-2">
                       <div className="flex items-center gap-2.5">
-                        <img 
-                          src={row.player.profilePhoto} 
+                        <img
+                          src={row.player.profilePhoto || defaultAvatar(row.player.displayName)}
                           alt={row.player.displayName}
-                          className="w-6 h-6 rounded-full object-cover border border-slate-700 shrink-0"
+                          className="h-7 w-7 rounded-full object-cover border border-white/10"
                         />
-                        <div className="truncate">
-                          <span className="font-bold text-white group-hover:text-orange-400 transition-colors block truncate">
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold text-white">
                             {row.player.displayName}
-                          </span>
-                          <span className="text-[10px] text-slate-400 block truncate">
-                            {row.player.teamName}
-                          </span>
+                          </div>
+                          <div className="truncate text-[11px] text-slate-400">
+                            {row.player.teamName || 'Player'}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-center text-slate-300 font-medium">{row.played}</td>
-                    <td className="py-2.5 px-2 text-center text-green-400 font-medium">{row.won}</td>
-                    <td className="py-2.5 px-2 text-center text-slate-400 font-medium">{row.drawn}</td>
-                    <td className="py-2.5 px-2 text-center text-rose-400 font-medium">{row.lost}</td>
-                    <td className="py-2.5 px-2 text-center font-bold text-slate-200">
+                    <td className="py-3 px-2 text-center text-slate-300">{row.played}</td>
+                    <td className="py-3 px-2 text-center text-green-400">{row.won}</td>
+                    <td className="py-3 px-2 text-center text-slate-400">{row.drawn}</td>
+                    <td className="py-3 px-2 text-center text-rose-400">{row.lost}</td>
+                    <td className="py-3 px-2 text-center font-bold text-slate-200">
                       {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
                     </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <span className="font-black text-sm text-orange-400 font-['Chakra_Petch',sans-serif]">
-                        {row.points}
-                      </span>
+                    <td className="py-3 px-2 text-right font-black text-orange-300">
+                      {row.points}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </Panel>
 
-        {/* Golden Boot Leaderboard (High Density Top Scorers) */}
-        <div className="rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between bg-slate-800/50 px-4 py-2 border-b border-slate-800 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              <div className="flex items-center gap-2">
-                <Award className="w-3.5 h-3.5 text-orange-400" />
-                <span className="text-slate-200 font-bold">Top Scorers</span>
-              </div>
-              <button
-                onClick={() => navigateTo('statistics')}
-                className="text-[10px] font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 flex items-center gap-1 group"
-              >
-                <span>Full Stats</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
-
-            <div className="p-3 space-y-2">
-              {topThreeScorers.map((scorer) => (
-                <div
+        <Panel
+          title="Top Scorers"
+          icon={<Award className="h-4 w-4 text-orange-400" />}
+          actionLabel="Full Stats"
+          onAction={() => navigateTo('statistics')}
+        >
+          <div className="space-y-2">
+            {topThreeScorers.length === 0 ? (
+              <EmptyState text="No scoring data yet." />
+            ) : (
+              topThreeScorers.map((scorer) => (
+                <button
                   key={scorer.player.id}
                   onClick={() => navigateTo('player_profile', scorer.player.id)}
-                  className="p-2.5 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition-colors group"
+                  className="w-full rounded-2xl border border-white/5 bg-slate-950 p-3 text-left transition-colors hover:border-white/10"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className={`w-6 h-6 rounded flex items-center justify-center font-bold text-xs ${
-                      scorer.rank === 1 ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-300'
-                    }`}>
-                      {scorer.rank}
-                    </span>
-                    <img
-                      src={scorer.player.profilePhoto}
-                      alt={scorer.player.displayName}
-                      className="w-7 h-7 rounded-full object-cover border border-slate-700"
-                    />
-                    <div>
-                      <span className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors block">
-                        {scorer.player.displayName}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black ${
+                          scorer.rank === 1
+                            ? 'bg-orange-500 text-slate-950'
+                            : 'bg-white/5 text-slate-200'
+                        }`}
+                      >
+                        {scorer.rank}
                       </span>
-                      <span className="text-[10px] text-slate-400 block">{scorer.player.teamName}</span>
+
+                      <img
+                        src={scorer.player.profilePhoto || defaultAvatar(scorer.player.displayName)}
+                        alt={scorer.player.displayName}
+                        className="h-8 w-8 rounded-full object-cover border border-white/10"
+                      />
+
+                      <div>
+                        <div className="font-semibold text-white">
+                          {scorer.player.displayName}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          {scorer.player.teamName || 'Player'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-xl font-black text-orange-400 font-['Chakra_Petch',sans-serif]">
+                        {scorer.goals}
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        goals
+                      </div>
                     </div>
                   </div>
-
-                  <div className="text-right">
-                    <span className="text-base font-black text-orange-500 font-['Chakra_Petch',sans-serif] block leading-none">
-                      {scorer.goals}
-                    </span>
-                    <span className="text-[9px] text-slate-400">{scorer.goalsPerMatch}/g</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                </button>
+              ))
+            )}
           </div>
+        </Panel>
+      </section>
 
-          <div className="p-3 pt-0 text-center">
-            <button
-              onClick={() => navigateTo('statistics')}
-              className="w-full py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 rounded-lg transition-colors border border-slate-700/60"
-            >
-              Assists & Clean Sheets →
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Roadmap Pipeline Snapshot (High Density Timeline) */}
-      <div className="rounded-xl bg-slate-900 border border-slate-800 overflow-hidden shadow-lg">
-        <div className="flex items-center justify-between bg-slate-800/50 px-4 py-2 border-b border-slate-800 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+      {/* Roadmap */}
+      <section className="rounded-3xl border border-white/5 bg-slate-900/80 shadow-lg">
+        <div className="flex items-center justify-between border-b border-white/5 bg-white/3 px-4 py-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-orange-400" />
-            <span className="text-slate-200 font-bold">Tournament Roadmap</span>
+            <Sparkles className="h-4 w-4 text-orange-400" />
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-200">
+              Tournament Roadmap
+            </h2>
           </div>
           <button
             onClick={() => navigateTo('roadmap')}
-            className="text-[10px] font-bold uppercase tracking-wider text-orange-400 hover:text-orange-300 flex items-center gap-1 group"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-orange-300 hover:text-orange-200"
           >
-            <span>Roadmap Details</span>
-            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+            Details <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="p-3 grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+        <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 xl:grid-cols-5">
           {roadmap.map((stage) => {
-            const isCompleted = stage.status === 'completed';
             const isCurrent = stage.status === 'current';
+            const isCompleted = stage.status === 'completed';
 
             return (
               <div
                 key={stage.id}
-                className={`p-3 rounded-lg border transition-all ${
+                className={`rounded-2xl border p-3 ${
                   isCurrent
-                    ? 'bg-orange-500/10 border-orange-500/50 shadow-md shadow-orange-950/20'
+                    ? 'border-orange-500/40 bg-orange-500/10'
                     : isCompleted
-                    ? 'bg-slate-950/60 border-slate-800 opacity-90'
-                    : 'bg-slate-950/30 border-slate-800/50 opacity-60'
+                    ? 'border-white/5 bg-slate-950'
+                    : 'border-white/5 bg-slate-950/60 opacity-80'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                     Stage {stage.stageOrder}
                   </span>
                   {isCompleted ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                    <CheckCircle2 className="h-4 w-4 text-green-400" />
                   ) : isCurrent ? (
-                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                    <span className="h-2.5 w-2.5 rounded-full bg-orange-400 animate-pulse" />
                   ) : (
-                    <Clock className="w-3 h-3 text-slate-500" />
+                    <Clock className="h-4 w-4 text-slate-500" />
                   )}
                 </div>
-                <h3 className="font-bold text-xs text-white line-clamp-1">{stage.title}</h3>
-                <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-2">{stage.description}</p>
+
+                <h3 className="text-sm font-bold text-white">{stage.title}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  {stage.description}
+                </p>
+
                 {stage.targetDate && (
-                  <span className="inline-block mt-2 text-[9px] font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">
+                  <span className="mt-2 inline-flex rounded-full border border-orange-500/20 bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-300">
                     {stage.targetDate}
                   </span>
                 )}
@@ -542,7 +467,136 @@ export const HomePage: React.FC = () => {
             );
           })}
         </div>
-      </div>
+      </section>
     </div>
   );
 };
+
+function StatCard({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur">
+      <div className="text-[10px] font-bold uppercase tracking-wider text-orange-200/90">
+        {label}
+      </div>
+      <div className="mt-1 text-xl sm:text-2xl font-black text-white font-['Chakra_Petch',sans-serif]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({
+  text,
+  onClick,
+}: {
+  text: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/10"
+    >
+      {text}
+    </button>
+  );
+}
+
+function Panel({
+  title,
+  icon,
+  actionLabel,
+  onAction,
+  children,
+  className = '',
+}: {
+  title: string;
+  icon: React.ReactNode;
+  actionLabel: string;
+  onAction: () => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`overflow-hidden rounded-3xl border border-white/5 bg-slate-900 shadow-lg ${className}`}>
+      <div className="flex items-center justify-between border-b border-white/5 bg-white/3 px-4 py-3">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-200">
+            {title}
+          </h2>
+        </div>
+
+        <button
+          onClick={onAction}
+          className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-orange-300 hover:text-orange-200"
+        >
+          {actionLabel} <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="p-3">{children}</div>
+    </div>
+  );
+}
+
+function PlayerMiniCard({
+  player,
+  align,
+  className = '',
+}: {
+  player?: Player;
+  align: 'left' | 'right';
+  className?: string;
+}) {
+  return (
+    <div className={`${className} flex items-center gap-2 ${align === 'right' ? 'justify-end text-right' : ''}`}>
+      {align === 'left' ? (
+        <>
+          <img
+            src={player?.profilePhoto || defaultAvatar(player?.displayName)}
+            alt={player?.displayName || 'Player'}
+            className="h-8 w-8 rounded-full object-cover border border-white/10 shrink-0"
+          />
+          <div className="min-w-0">
+            <div className="truncate text-xs font-bold text-white">
+              {player?.displayName || 'Player'}
+            </div>
+            <div className="truncate text-[10px] text-slate-400">
+              {player?.teamName || 'Player'}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="min-w-0">
+            <div className="truncate text-xs font-bold text-white">
+              {player?.displayName || 'Player'}
+            </div>
+            <div className="truncate text-[10px] text-slate-400">
+              {player?.teamName || 'Player'}
+            </div>
+          </div>
+          <img
+            src={player?.profilePhoto || defaultAvatar(player?.displayName)}
+            alt={player?.displayName || 'Player'}
+            className="h-8 w-8 rounded-full object-cover border border-white/10 shrink-0"
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950 px-4 py-6 text-center text-xs text-slate-500">
+      {text}
+    </div>
+  );
+}
+
+function defaultAvatar(name?: string) {
+  const seed = encodeURIComponent(name || 'player');
+  return `https://api.dicebear.com/7.x/thumbs/svg?seed=${seed}`;
+}
