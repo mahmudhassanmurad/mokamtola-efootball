@@ -1,46 +1,86 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTournament } from '../../context/TournamentContext';
-import { Lock, ShieldAlert, KeyRound, Eye, EyeOff, X, ShieldCheck } from 'lucide-react';
+import {
+  Lock,
+  ShieldAlert,
+  Mail,
+  Eye,
+  EyeOff,
+  X,
+  ShieldCheck,
+} from 'lucide-react';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose }) => {
+export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const { adminLogin, navigateTo } = useTournament();
-  const [pin, setPin] = useState('');
-  const [showPin, setShowPin] = useState(false);
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setPassword('');
+      setError(null);
+      setIsSubmitting(false);
+      setShowPassword(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleClose = () => {
+    if (isSubmitting) return;
+    onClose();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    const success = adminLogin(pin);
-    if (success) {
-      setPin('');
+    if (!email.trim() || !password) {
+      setError('Please enter admin email and password.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await adminLogin(email.trim(), password);
+      setPassword('');
+      setError(null);
       onClose();
       navigateTo('admin');
-    } else {
-      setError('Invalid Admin Security Key. Please verify your credentials.');
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Admin login failed. Please try again.';
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
       <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-2xl overflow-hidden">
-        {/* Close Button */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
 
-        {/* Icon + Header */}
         <div className="flex flex-col items-center text-center">
           <div className="w-12 h-12 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-3 shadow-md">
             <Lock className="w-6 h-6" />
@@ -53,11 +93,12 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
             Admin Panel Login
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
-            Public visitors do not need accounts. Only tournament administrators can sign in to control tournaments, fixtures & results.
+            Public visitors do not need accounts. Only tournament
+            administrators can sign in to control tournaments, fixtures
+            &amp; results.
           </p>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="mt-3 p-2.5 bg-rose-950/60 border border-rose-800/60 rounded-lg flex items-center gap-2 text-xs text-rose-300">
             <ShieldAlert className="w-4 h-4 shrink-0" />
@@ -65,44 +106,71 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           <div>
             <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-              Admin Security Passkey / PIN
+              Admin Email
             </label>
             <div className="relative">
-              <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
-                type={showPin ? 'text' : 'password'}
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="Enter admin passkey..."
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
                 autoFocus
-                autoComplete="new-password"
-                autoCorrect="off"
-                autoCapitalize="none"
-                spellCheck={false}
-                name="admin-passkey"
-                className="w-full pl-9 pr-9 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 transition-colors font-mono"
+                autoComplete="email"
+                className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+              Admin Password
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter admin password..."
+                autoComplete="current-password"
+                className="w-full pl-9 pr-9 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
               />
               <button
                 type="button"
-                onClick={() => setShowPin(!showPin)}
+                onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
               >
-                {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-orange-500 hover:bg-orange-400 text-slate-950 font-bold rounded-lg text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md"
+            disabled={isSubmitting}
+            className="w-full py-2.5 bg-orange-500 hover:bg-orange-400 disabled:opacity-60 disabled:cursor-not-allowed text-slate-950 font-bold rounded-lg text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>Authenticate & Access Control Panel</span>
+            <span>
+              {isSubmitting
+                ? 'Authenticating...'
+                : 'Authenticate & Access Control Panel'}
+            </span>
           </button>
+
+          <p className="text-center text-[10px] text-slate-500">
+            Secure Supabase admin session. Only authorized admin can sign in.
+          </p>
         </form>
       </div>
     </div>

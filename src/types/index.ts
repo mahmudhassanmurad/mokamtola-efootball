@@ -5,6 +5,7 @@ export type MatchStatus = 'scheduled' | 'live' | 'completed';
 export interface Player {
   id: string;
   fullName: string;
+  facebookUrl?: string;
   displayName: string;
   profilePhoto: string;
   teamName: string;
@@ -149,7 +150,7 @@ export interface WebsiteSettings {
   adminPin: string;
 }
 
-export type PublicPage = 
+export type PublicPage =
   | 'home'
   | 'tournaments'
   | 'tournament_details'
