@@ -28,7 +28,6 @@ import {
   INITIAL_TOURNAMENTS,
   INITIAL_SEASONS,
   INITIAL_PLAYERS,
-  INITIAL_MATCHES,
   INITIAL_ANNOUNCEMENTS,
   INITIAL_RULES,
   INITIAL_ROADMAP,
@@ -47,9 +46,15 @@ import {
 import {
   fetchPublicSettings,
   fetchPublicPlayers,
+  fetchPublicMatches,
   createPlayerInSupabase,
   updatePlayerInSupabase,
   deletePlayerFromSupabase,
+  createMatchInSupabase,
+  updateMatchInSupabase,
+  deleteMatchFromSupabase,
+  saveMatchResultInSupabase,
+  deleteMatchResultFromSupabase,
 } from '../services/supabaseService';
 
 import {
@@ -323,20 +328,12 @@ export const TournamentProvider: React.FC<{
   const [isPlayersLoading, setIsPlayersLoading] =
     useState(true);
 
+  /*
+   * Matches now use Supabase as the single source of truth.
+   * No more seed/localStorage for fixtures.
+   */
   const [matches, setMatches] =
-    useState<Match[]>(() => {
-      try {
-        const saved = localStorage.getItem(
-          STORAGE_KEY + '_matches'
-        );
-
-        return saved
-          ? JSON.parse(saved)
-          : INITIAL_MATCHES;
-      } catch {
-        return INITIAL_MATCHES;
-      }
-    });
+    useState<Match[]>([]);
 
   const [
     announcements,
@@ -467,11 +464,6 @@ export const TournamentProvider: React.FC<{
           'Supabase players load failed:',
           error
         );
-
-        /*
-         * Keep seed fallback visible if public read fails.
-         * We do NOT overwrite the database.
-         */
       } finally {
         if (mounted) {
           setIsPlayersLoading(false);
@@ -479,7 +471,36 @@ export const TournamentProvider: React.FC<{
       }
     };
 
-    loadPlayers();
+    void loadPlayers();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  /*
+   * Load Matches from Supabase (authoritative fixtures).
+   */
+  useEffect(() => {
+    let mounted = true;
+
+    const loadMatches = async () => {
+      try {
+        const databaseMatches =
+          await fetchPublicMatches();
+
+        if (mounted) {
+          setMatches(databaseMatches);
+        }
+      } catch (error) {
+        console.error(
+          'Supabase matches load failed:',
+          error
+        );
+      }
+    };
+
+    void loadMatches();
 
     return () => {
       mounted = false;
@@ -523,7 +544,7 @@ export const TournamentProvider: React.FC<{
       }
     };
 
-    restoreAdminSession();
+    void restoreAdminSession();
 
     const unsubscribe =
       onAuthSessionChange((hasSession) => {
@@ -551,7 +572,7 @@ export const TournamentProvider: React.FC<{
    * Temporary local persistence for data that has not yet
    * been fully migrated to Supabase.
    *
-   * Players are intentionally NOT stored here anymore.
+   * Players and Matches are intentionally NOT stored here anymore.
    */
   useEffect(() => {
     try {
@@ -563,11 +584,6 @@ export const TournamentProvider: React.FC<{
       localStorage.setItem(
         STORAGE_KEY + '_seasons',
         JSON.stringify(seasons)
-      );
-
-      localStorage.setItem(
-        STORAGE_KEY + '_matches',
-        JSON.stringify(matches)
       );
 
       localStorage.setItem(
@@ -598,7 +614,6 @@ export const TournamentProvider: React.FC<{
   }, [
     tournaments,
     seasons,
-    matches,
     announcements,
     rules,
     roadmap,
@@ -668,7 +683,7 @@ export const TournamentProvider: React.FC<{
       }
     };
 
-    loadSupabaseSettings();
+    void loadSupabaseSettings();
   }, []);
 
   /*
@@ -1144,21 +1159,15 @@ export const TournamentProvider: React.FC<{
     );
 
     /*
-     * Existing local match cleanup stays here.
-     * Database match deletion is NOT silently performed
-     * by this Player operation.
+     * NOTE:
+     * We previously cleaned up local matches here when Players were
+     * deleted. Now that matches live in Supabase, database fixtures
+     * are NOT automatically deleted in this player operation.
      */
-    setMatches((prev) =>
-      prev.filter(
-        (match) =>
-          match.homePlayerId !== id &&
-          match.awayPlayerId !== id
-      )
-    );
   };
 
   /*
-   * Fixture Management.
+   * Fixture Management (Supabase-backed).
    */
   const generateRoundRobinFixtures = (
     tournamentId: string,
@@ -1177,20 +1186,18 @@ export const TournamentProvider: React.FC<{
     }
 
     const n = list.length;
-
     const totalRounds =
       n - 1;
-
     const matchesPerRound =
       n / 2;
 
-    const newMatches: Match[] = [];
-
-    let matchCounter =
-      Date.now();
-
     const today =
       new Date();
+
+    const payloads: Omit<
+      Match,
+      'id' | 'events'
+    >[] = [];
 
     for (
       let r = 0;
@@ -1270,54 +1277,63 @@ export const TournamentProvider: React.FC<{
               timeSlots.length
           ];
 
-        newMatches.push({
-          id:
-            `match-gen-${matchCounter++}`,
-
+        payloads.push({
           tournamentId,
-
           seasonId:
             selectedSeasonId,
-
           round:
             roundNum,
-
           roundName:
             `Round ${roundNum}`,
-
           homePlayerId,
           awayPlayerId,
-
           homeScore:
             null,
-
           awayScore:
             null,
-
           status:
             'scheduled',
-
           scheduledDate:
             dateStr,
-
           scheduledTime,
-
           pitch:
             'Official eFootball Arena',
-
-          events: [],
+          notes:
+            undefined,
         });
       }
     }
 
-    setMatches((prev) => [
-      ...prev.filter(
-        (match) =>
-          match.tournamentId !==
-          tournamentId
-      ),
-      ...newMatches,
-    ]);
+    // Fire-and-forget async creation into Supabase
+    void (async () => {
+      try {
+        const created: Match[] =
+          [];
+
+        for (const match of payloads) {
+          const dbMatch =
+            await createMatchInSupabase(
+              match
+            );
+
+          created.push(
+            dbMatch
+          );
+        }
+
+        setMatches(
+          (prev) => [
+            ...prev,
+            ...created,
+          ]
+        );
+      } catch (error) {
+        console.error(
+          'Round-robin fixture generation failed:',
+          error
+        );
+      }
+    })();
   };
 
   const createManualFixture = (
@@ -1326,26 +1342,51 @@ export const TournamentProvider: React.FC<{
       'id' | 'events'
     >
   ) => {
-    const newMatch: Match = {
-      ...data,
+    void (async () => {
+      try {
+        const created =
+          await createMatchInSupabase(
+            {
+              ...data,
+              seasonId:
+                data.seasonId ||
+                selectedSeasonId,
+              homeScore:
+                data.homeScore ??
+                null,
+              awayScore:
+                data.awayScore ??
+                null,
+              status:
+                data.status ??
+                'scheduled',
+              scheduledDate:
+                data.scheduledDate ??
+                '',
+              scheduledTime:
+                data.scheduledTime ??
+                '',
+            }
+          );
 
-      id:
-        'match-' +
-        Date.now(),
-
-      events: [],
-    };
-
-    setMatches((prev) => [
-      ...prev,
-      newMatch,
-    ]);
+        setMatches((prev) => [
+          ...prev,
+          created,
+        ]);
+      } catch (error) {
+        console.error(
+          'Failed to create fixture in Supabase:',
+          error
+        );
+      }
+    })();
   };
 
   const updateFixture = (
     id: string,
     updates: Partial<Match>
   ) => {
+    // Optimistic local update
     setMatches((prev) =>
       prev.map((match) =>
         match.id === id
@@ -1356,17 +1397,45 @@ export const TournamentProvider: React.FC<{
           : match
       )
     );
+
+    void (async () => {
+      try {
+        await updateMatchInSupabase(
+          id,
+          updates
+        );
+      } catch (error) {
+        console.error(
+          'Failed to update fixture in Supabase:',
+          error
+        );
+      }
+    })();
   };
 
   const deleteFixture = (
     id: string
   ) => {
+    // Optimistic local delete
     setMatches((prev) =>
       prev.filter(
         (match) =>
           match.id !== id
       )
     );
+
+    void (async () => {
+      try {
+        await deleteMatchFromSupabase(
+          id
+        );
+      } catch (error) {
+        console.error(
+          'Failed to delete fixture from Supabase:',
+          error
+        );
+      }
+    })();
   };
 
   const rescheduleFixture = (
@@ -1374,26 +1443,45 @@ export const TournamentProvider: React.FC<{
     newDate: string,
     newTime: string
   ) => {
+    // Optimistic local update
     setMatches((prev) =>
       prev.map((match) =>
         match.id === id
           ? {
               ...match,
-
               scheduledDate:
                 newDate,
-
               scheduledTime:
                 newTime,
             }
           : match
       )
     );
+
+    void (async () => {
+      try {
+        await updateMatchInSupabase(
+          id,
+          {
+            scheduledDate:
+              newDate,
+            scheduledTime:
+              newTime,
+          }
+        );
+      } catch (error) {
+        console.error(
+          'Failed to reschedule fixture in Supabase:',
+          error
+        );
+      }
+    })();
   };
 
   /*
    * Authoritative result calculation continues to derive
-   * statistics from Match data.
+   * statistics from Match data. Results + events now also
+   * persist to Supabase (matches + match_events).
    */
   const enterMatchResult = (
     matchId: string,
@@ -1402,6 +1490,7 @@ export const TournamentProvider: React.FC<{
     events: MatchEvent[],
     notes?: string
   ) => {
+    // Local state update
     setMatches((prev) =>
       prev.map((match) => {
         if (
@@ -1412,13 +1501,10 @@ export const TournamentProvider: React.FC<{
 
         return {
           ...match,
-
           homeScore,
           awayScore,
-
           status:
             'completed',
-
           events:
             events.map(
               (event) => ({
@@ -1426,7 +1512,6 @@ export const TournamentProvider: React.FC<{
                 matchId,
               })
             ),
-
           notes:
             notes !== undefined
               ? notes
@@ -1434,6 +1519,24 @@ export const TournamentProvider: React.FC<{
         };
       })
     );
+
+    // Persist to Supabase (scores + full event set)
+    void (async () => {
+      try {
+        await saveMatchResultInSupabase(
+          matchId,
+          homeScore,
+          awayScore,
+          events,
+          notes
+        );
+      } catch (error) {
+        console.error(
+          'Failed to save match result in Supabase:',
+          error
+        );
+      }
+    })();
   };
 
   const editMatchResult = (
@@ -1455,6 +1558,7 @@ export const TournamentProvider: React.FC<{
   const deleteMatchResult = (
     matchId: string
   ) => {
+    // Local reset
     setMatches((prev) =>
       prev.map((match) => {
         if (
@@ -1465,24 +1569,34 @@ export const TournamentProvider: React.FC<{
 
         return {
           ...match,
-
           homeScore:
             null,
-
           awayScore:
             null,
-
           status:
             'scheduled',
-
           events: [],
         };
       })
     );
+
+    // Supabase reset (scores + events)
+    void (async () => {
+      try {
+        await deleteMatchResultFromSupabase(
+          matchId
+        );
+      } catch (error) {
+        console.error(
+          'Failed to delete match result from Supabase:',
+          error
+        );
+      }
+    })();
   };
 
   /*
-   * Match Events.
+   * Match Events (local helpers, used while editing).
    */
   const addGoalEvent = (
     matchId: string,
@@ -1739,7 +1853,7 @@ export const TournamentProvider: React.FC<{
    * Reset.
    *
    * IMPORTANT:
-   * Supabase Players are not reset/deleted here.
+   * Supabase Players and Matches are not reset/deleted here.
    * A public database entity must never be destructively
    * overwritten by a local demo reset button.
    */
@@ -1750,10 +1864,6 @@ export const TournamentProvider: React.FC<{
 
     setSeasons(
       INITIAL_SEASONS
-    );
-
-    setMatches(
-      INITIAL_MATCHES
     );
 
     setAnnouncements(
@@ -1788,6 +1898,8 @@ export const TournamentProvider: React.FC<{
 
   /*
    * JSON export.
+   * (Includes current in-memory Matches, which are
+   * loaded from Supabase.)
    */
   const exportDatabaseJSON = () => {
     const backup = {
@@ -1814,7 +1926,7 @@ export const TournamentProvider: React.FC<{
   /*
    * Import remains available for the data that is still
    * local. We intentionally do NOT replace Supabase
-   * Players from an untrusted local JSON import.
+   * Players or Matches from an untrusted local JSON import.
    */
   const importDatabaseJSON = (
     jsonStr: string
@@ -1835,11 +1947,7 @@ export const TournamentProvider: React.FC<{
         );
       }
 
-      if (data.matches) {
-        setMatches(
-          data.matches
-        );
-      }
+      // Matches come from Supabase; ignore imported matches.
 
       if (data.announcements) {
         setAnnouncements(
