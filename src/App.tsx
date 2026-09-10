@@ -5,6 +5,7 @@ import { MobileNav } from './components/MobileNav';
 import { ShareModal } from './components/ShareModal';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { FixtureMigrationButton } from './components/admin/FixtureMigrationButton';
 
 // Public Pages
 import { HomePage } from './components/public/HomePage';
@@ -69,7 +70,15 @@ const MainLayout: React.FC = () => {
         {/* Admin Panel (Protected Route) */}
         {activePublicPage === 'admin' && (
           isAdminLoggedIn ? (
-            <AdminDashboard />
+            <div className="space-y-4">
+              {/* One-time Fixture Migration Control (Admin-only) */}
+              <div className="flex justify-end">
+                <FixtureMigrationButton />
+              </div>
+
+              {/* Main Admin Dashboard */}
+              <AdminDashboard />
+            </div>
           ) : (
             <div className="max-w-md mx-auto py-16 text-center space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 mx-auto">
